@@ -2,25 +2,41 @@ using UnityEngine;
 
 public class MidpointAnchor : MonoBehaviour
 {
-    [Header("Referências dos Personagens")]
+    [Header("Character References")]
+    [Tooltip("Reference to the pig/gun character.")]
     public GunCharacterController gunCharacter;
+
+    [Tooltip("Reference to the cat/jump character.")]
     public JumpCharacterController jumpCharacter;
 
-    [Header("Configurações de Distância")]
-    [Tooltip("Distância minima entre os personagens antes do objeto começar a se mover. " +
-             "Abaixo do limite, a ancora fica na ultima posição.")]
-    [SerializeField] float minimumDistance = 2f;
+    [Header("Hysteresis Thresholds")]
+    [Tooltip("Players must be CLOSER than this distance for oscillation suppression to " +
+             "activate. Must always be less than unfreezeDistance.")]
+    [SerializeField] float freezeDistance = 2f;
 
-    [Tooltip("Quão suave é o movimento até o meio. 0 = snap instantaneo, alto = mais suave.")]
-    [SerializeField] float smoothSpeed = 5f;
+    [Tooltip("Players must be FURTHER than this distance for the anchor to resume tracking. " +
+             "Must always be greater than freezeDistance. The gap between the two is the " +
+             "hysteresis band — prevents state from toggling at the boundary.")]
+    [SerializeField] float unfreezeDistance = 3f;
 
-    // The last valid midpoint that was calculated when distance >= minimumDistance
-    Vector3 targetPosition;
+    [Header("Velocity Detection")]
+    [Tooltip("Smoothed midpoint speed (world units/second) above which the anchor always " +
+             "tracks, even when players are close. Handles both players walking together.")]
+    [SerializeField] float midpointVelocityThreshold = 0.5f;
+
+    [Tooltip("EMA smoothing factor for midpoint speed (0–1). Lower = more resistant to " +
+             "single-frame physics impulse spikes from the DistanceJoint2D constraint.")]
+    [Range(0.01f, 1f)]
+    [SerializeField] float velocitySmoothing = 0.15f;
+
+    // Internal state
+    Vector3 frozenPosition;        // world-space position held while frozen
+    Vector3 previousMidpoint;
+    float smoothedMidpointSpeed;
+    bool isFrozen = false;
 
     private void Awake()
     {
-        // Auto-find characters if not assigned in the Inspector.
-        // FindFirstObjectByType is the Unity 6 recommended replacement for FindObjectOfType.
         if (gunCharacter == null)
             gunCharacter = FindFirstObjectByType<GunCharacterController>();
 
@@ -35,63 +51,90 @@ public class MidpointAnchor : MonoBehaviour
             return;
         }
 
-        // Initialize the anchor at the midpoint between the two characters on start.
-        targetPosition = CalculateMidpoint();
-        transform.position = targetPosition;
+        if (freezeDistance >= unfreezeDistance)
+        {
+            Debug.LogWarning("[MidpointAnchor] freezeDistance must be less than unfreezeDistance. " +
+                             "Adjusting unfreezeDistance to freezeDistance + 1.");
+            unfreezeDistance = freezeDistance + 1f;
+        }
+
+        // Initialise — snap to the exact midpoint immediately.
+        Vector3 startMidpoint = CalculateMidpoint();
+        frozenPosition = startMidpoint;
+        previousMidpoint = startMidpoint;
+        transform.position = startMidpoint;
     }
 
     private void LateUpdate()
     {
-        // LateUpdate is intentional here: both characters will have already moved
-        // during Update/FixedUpdate this frame, so we read their final positions.
+        Vector3 currentMidpoint = CalculateMidpoint();
 
+        // --- Step 1: EMA-smoothed midpoint speed.
+        // Dampens single-frame spikes (DistanceJoint2D impulses) while still
+        // detecting sustained movement like both players walking together.
+        float rawSpeed = Vector3.Distance(currentMidpoint, previousMidpoint) / Time.deltaTime;
+        smoothedMidpointSpeed = smoothedMidpointSpeed + velocitySmoothing * (rawSpeed - smoothedMidpointSpeed);
+        previousMidpoint = currentMidpoint;
+
+        // --- Step 2: Hysteresis state machine.
         float distanceBetweenPlayers = Vector2.Distance(
             gunCharacter.transform.position,
             jumpCharacter.transform.position
         );
 
-        // Only recalculate the target if the players are further apart than the minimum threshold.
-        // This is the "dead zone" concept: inside the minimum distance, the anchor is frozen.
-        if (distanceBetweenPlayers >= minimumDistance)
+        if (!isFrozen)
         {
-            targetPosition = CalculateMidpoint();
+            if (distanceBetweenPlayers < freezeDistance && smoothedMidpointSpeed <= midpointVelocityThreshold)
+            {
+                isFrozen = true;
+                frozenPosition = currentMidpoint; // record where we stop
+            }
+        }
+        else
+        {
+            if (distanceBetweenPlayers > unfreezeDistance || smoothedMidpointSpeed > midpointVelocityThreshold)
+                isFrozen = false;
         }
 
-        // Smoothly move toward the target. Using Vector3.Lerp with Time.deltaTime gives
-        // frame-rate independent interpolation that feels responsive but not snappy.
-        transform.position = Vector3.Lerp(transform.position, targetPosition, smoothSpeed * Time.deltaTime);
+        // --- Step 3: Set position INSTANTLY — no Lerp, no lag.
+        // Cinemachine's PositionComposer damping handles all camera smoothing.
+        // A second smoothing layer here compounds with Cinemachine and causes
+        // the "readjusting constantly" symptom regardless of parameter tuning.
+        transform.position = isFrozen ? frozenPosition : currentMidpoint;
     }
 
-    /// <summary>
-    /// Returns the exact world-space midpoint between both characters.
-    /// Z is preserved from this object's own position so it doesn't drift on the Z axis
-    /// (important for 2D games where Z controls render order/camera distance).
-    /// </summary>
     private Vector3 CalculateMidpoint()
     {
         Vector3 midpoint = (gunCharacter.transform.position + jumpCharacter.transform.position) / 2f;
-        midpoint.z = transform.position.z; // Keep Z stable — do not let it drift.
+        midpoint.z = transform.position.z;
         return midpoint;
     }
 
-    // ------------------------------------------------------------------
-    // Gizmos: draws a visual debug aid in the Scene view so you can see
-    // the minimum distance bubble and the anchor position at a glance.
-    // ------------------------------------------------------------------
     private void OnDrawGizmosSelected()
     {
         if (gunCharacter == null || jumpCharacter == null) return;
 
-        // Draw a line between both players
         Gizmos.color = Color.cyan;
         Gizmos.DrawLine(gunCharacter.transform.position, jumpCharacter.transform.position);
 
-        // Draw the minimum distance circle centered on the anchor
+        // Inner threshold — where freeze activates
         Gizmos.color = Color.yellow;
-        Gizmos.DrawWireSphere(transform.position, minimumDistance / 2f);
+        Gizmos.DrawWireSphere(transform.position, freezeDistance / 2f);
 
-        // Draw the anchor itself
-        Gizmos.color = Color.green;
+        // Outer threshold — where freeze releases (hysteresis band lives between these two)
+        Gizmos.color = new Color(1f, 0.5f, 0f);
+        Gizmos.DrawWireSphere(transform.position, unfreezeDistance / 2f);
+
+        Gizmos.color = isFrozen ? Color.red : Color.green;
         Gizmos.DrawSphere(transform.position, 0.15f);
+
+#if UNITY_EDITOR
+        UnityEditor.Handles.Label(
+            transform.position + Vector3.up * 0.6f,
+            $"state: {(isFrozen ? "FROZEN" : "tracking")}\n" +
+            $"smoothed speed: {smoothedMidpointSpeed:F2} u/s\n" +
+            $"player dist: {Vector2.Distance(gunCharacter.transform.position, jumpCharacter.transform.position):F2}"
+        );
+#endif
     }
 }

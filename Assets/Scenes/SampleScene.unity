@@ -325,7 +325,7 @@ Transform:
   m_GameObject: {fileID: 519420028}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 10.488798, y: -0.1964, z: -10}
+  m_LocalPosition: {x: 0, y: 0, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -510,7 +510,7 @@ PolygonCollider2D:
   m_CallbackLayers:
     serializedVersion: 2
     m_Bits: 4294967295
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
@@ -582,8 +582,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MidpointAnchor
   gunCharacter: {fileID: 1814248293}
   jumpCharacter: {fileID: 828487270}
-  minimumDistance: 2
-  smoothSpeed: 5
+  freezeDistance: 2
+  unfreezeDistance: 3
+  midpointVelocityThreshold: 0.5
+  velocitySmoothing: 0.15
 --- !u!4 &1027137322
 Transform:
   m_ObjectHideFlags: 0
@@ -793,7 +795,7 @@ MonoBehaviour:
       Offset: {x: 0, y: 0}
   CenterOnActivate: 1
   TargetOffset: {x: 0, y: 0, z: 0}
-  Damping: {x: 0.5, y: 0.5, z: 1}
+  Damping: {x: 0, y: 0, z: 0.3}
   Lookahead:
     Enabled: 0
     Time: 0
@@ -806,7 +808,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1449526517}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f453f694addf4275988fac205bc91968, type: 3}
   m_Name: 
