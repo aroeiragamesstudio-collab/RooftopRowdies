@@ -21,39 +21,43 @@ public class JumpCharacterController : MonoBehaviour
         Absorbed
     }
 
+    [Header("Atributos Base")]
+    public CharacterState currentState;
     [SerializeField] float originalSpeed = 10f;
     [SerializeField] float originalJumpForce = 15f;
-    Rigidbody2D rb;
+    public PlayerInput playerInput;
 
+    [Header("Informação da mecânica de agarrar")]
+    public float holdTime = 10f;
     [SerializeField] Transform bottomPos, sidePos, topPos;
     [SerializeField] LayerMask floorLayer, wallLayer, topLayer;
     [SerializeField] float bottomSize = 1.5f;
     [SerializeField] float sideSize = 1.5f;
     [SerializeField] float topSize = 1.5f;
 
+    [Header("Informação de ser atirado")]
+    public float timeToNormal = 5f;
+
     Vector2 moveInput;
     float x;
 
-    public PlayerInput playerInput;
     InputAction moveAction;
     InputAction jumpAction;
     InputAction waitAction;
+    Rigidbody2D rb;
 
+    [HideInInspector]
     public bool beingShot;
 
-    public CharacterState currentState;
-
-    public float timeToNormal = 5f;
     float timePassed;
-
     bool holding;
-    public float holdTime = 10f;
-
     bool startHold;
     bool falling;
+    bool facingRight = true;
 
-    DistanceJoint2D distanceJoint;
+    [HideInInspector]
     public GunCharacterController porky;
+    DistanceJoint2D distanceJoint;
 
     void Awake()
     {
@@ -115,6 +119,7 @@ public class JumpCharacterController : MonoBehaviour
             Jump();
         }
 
+        // VERIFICAR SE NÃO FAZ MAIS SENTIDO SEGURAR MULTIPLAS VEZES AO INVÉS DE SÓ UMA
         if (!startHold && jumpAction.IsPressed() && !OnGround() && (OnCeiling() || OnWall()))
         {
             holding = true;
@@ -154,6 +159,11 @@ public class JumpCharacterController : MonoBehaviour
 
         IsSwinging();
         Wait();
+
+        if (moveInput.x < 0 && facingRight || moveInput.x > 0 && !facingRight)
+        {
+            Flip();
+        }
     }
 
     private void FixedUpdate()
@@ -161,6 +171,7 @@ public class JumpCharacterController : MonoBehaviour
         switch (currentState)
         {
             case CharacterState.Idle:
+                if(holding) return;
                 rb.linearVelocityX = moveInput.x * originalSpeed;
                 break;
             case CharacterState.Walking:
@@ -197,6 +208,15 @@ public class JumpCharacterController : MonoBehaviour
             case CharacterState.Absorbed:
                 break;
         }
+    }
+
+    private void Flip()
+    {
+        Vector3 currentScale = transform.localScale;
+        currentScale.x *= -1;
+        transform.localScale = currentScale;
+
+        facingRight = !facingRight;
     }
 
     private void Jump()

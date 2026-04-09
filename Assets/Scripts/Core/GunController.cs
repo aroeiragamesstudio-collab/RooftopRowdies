@@ -8,31 +8,34 @@ using UnityEngine.Windows;
 /// </summary>
 public class GunController : MonoBehaviour
 {
+    [Header("Informações associadas ao jogador que possui")]
     public PlayerInput parentInput;
     public Rigidbody2D rbPlayer;
-
-    InputAction rightStick;
-    InputAction shootBtn;
-    InputAction absorbBtn;
     public InputActionReference aimActionRef;
 
+    [Header("Atributos da arma")]
     public float offset;
-    public float gunForce = 5f;
-
+    [Tooltip("Controla o quanto a arma empurra o personagem.")]
+    public float gunKnockback = 5f;
+    [Tooltip("Controla o quão longe o gato é atirado.")]
     public float shootForce = 10f;
-
-    bool canShoot;
     public float timeBetweenShots = 1f;
-    float gunCooldown;
-    bool absorbed;
 
+    [Header("Informações sobre absorver")]
+    public float absorbDistance = 2f;
+    public float aimTolerance = 0.8f;
+
+    float gunCooldown;
+    bool canShoot;
+    bool absorbed;
     bool isUsingMouse;
 
     [HideInInspector]
     public JumpCharacterController jumpChar;
 
-    public float absorbDistance = 2f;
-    public float aimTolerance = 0.8f;
+    InputAction rightStick;
+    InputAction shootBtn;
+    InputAction absorbBtn;
 
     private void Start()
     {
@@ -157,7 +160,7 @@ public class GunController : MonoBehaviour
         }
 
         Vector2 knockbackDir = -aimDirection; // Direção oposta ao tiro
-        rbPlayer.AddForce(knockbackDir * gunForce, ForceMode2D.Impulse);
+        rbPlayer.AddForce(knockbackDir * gunKnockback, ForceMode2D.Impulse);
 
         // Testar depois
         /*

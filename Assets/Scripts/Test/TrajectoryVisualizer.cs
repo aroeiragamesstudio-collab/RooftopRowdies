@@ -332,7 +332,7 @@ public class TrajectoryVisualizer : MonoBehaviour
 
         // -transform.right = knockback direction (opposite to aim)
         Vector2 knockbackDir = -(Vector2)_gun.transform.right;
-        return knockbackDir * _gun.gunForce;
+        return knockbackDir * _gun.gunKnockback;
     }
 
     /// <summary>
@@ -349,7 +349,7 @@ public class TrajectoryVisualizer : MonoBehaviour
             return AngleToVelocity(launchAngleDeg, launchSpeed);
 
         Vector2 shotDir = (Vector2)_gun.transform.right;
-        return shotDir * _gun.gunForce;
+        return shotDir * _gun.gunKnockback;
     }
 
     // -------------------------------------------------------------------------
@@ -571,7 +571,7 @@ public class TrajectoryVisualizer : MonoBehaviour
         GunController gun = GetComponentInChildren<GunController>();
         if (gun == null) { Debug.LogWarning("TrajectoryVisualizer: No GunController found."); return; }
 
-        launchSpeed = gun.gunForce;
+        launchSpeed = gun.gunKnockback;
         characterType = CharacterType.PigKnockback;
 
         Debug.Log($"TrajectoryVisualizer: Auto-filled — launchSpeed={launchSpeed}");

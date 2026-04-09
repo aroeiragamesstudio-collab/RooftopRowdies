@@ -10,10 +10,10 @@ GameObject:
   m_Component:
   - component: {fileID: 5867335715226277767}
   - component: {fileID: 1112273706791065528}
-  - component: {fileID: 2640800705571640124}
-  - component: {fileID: 8725384248250218035}
   - component: {fileID: 3539429936041892586}
+  - component: {fileID: 8725384248250218035}
   - component: {fileID: 7072171812833905426}
+  - component: {fileID: 2640800705571640124}
   - component: {fileID: 8323727154950466415}
   m_Layer: 0
   m_Name: GunCharacter
@@ -98,6 +98,90 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
+--- !u!58 &3539429936041892586
+CircleCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1113393193735310004}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_IsTrigger: 0
+  m_UsedByEffector: 0
+  m_CompositeOperation: 0
+  m_CompositeOrder: 0
+  m_Offset: {x: 0, y: 0}
+  m_Radius: 0.5
+--- !u!50 &8725384248250218035
+Rigidbody2D:
+  serializedVersion: 5
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1113393193735310004}
+  m_BodyType: 0
+  m_Simulated: 1
+  m_UseFullKinematicContacts: 0
+  m_UseAutoMass: 0
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_GravityScale: 1
+  m_Material: {fileID: 6200000, guid: d291826944a0f544a8eaed433e3616f1, type: 2}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_Interpolate: 0
+  m_SleepingMode: 1
+  m_CollisionDetection: 0
+  m_Constraints: 4
+--- !u!114 &7072171812833905426
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1113393193735310004}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f8dd1f3660e90114eac8094989791432, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GunCharacterController
+  currentState: 0
+  originalSpeed: 10
+  playerInput: {fileID: 2640800705571640124}
+  bottomPos: {fileID: 8270586499843573950}
+  floorLayer:
+    serializedVersion: 2
+    m_Bits: 8
+  bottomSize: 1.5
+  paws: {fileID: 0}
 --- !u!114 &2640800705571640124
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -160,108 +244,6 @@ MonoBehaviour:
   m_DefaultActionMap: GunPlayer
   m_SplitScreenIndex: -1
   m_Camera: {fileID: 0}
---- !u!50 &8725384248250218035
-Rigidbody2D:
-  serializedVersion: 5
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1113393193735310004}
-  m_BodyType: 0
-  m_Simulated: 1
-  m_UseFullKinematicContacts: 0
-  m_UseAutoMass: 0
-  m_Mass: 1
-  m_LinearDamping: 0
-  m_AngularDamping: 0.05
-  m_GravityScale: 1
-  m_Material: {fileID: 6200000, guid: d291826944a0f544a8eaed433e3616f1, type: 2}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_Interpolate: 0
-  m_SleepingMode: 1
-  m_CollisionDetection: 0
-  m_Constraints: 4
---- !u!58 &3539429936041892586
-CircleCollider2D:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1113393193735310004}
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Density: 1
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_ForceSendLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_ForceReceiveLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_ContactCaptureLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_CallbackLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_IsTrigger: 0
-  m_UsedByEffector: 0
-  m_CompositeOperation: 0
-  m_CompositeOrder: 0
-  m_Offset: {x: 0, y: 0}
-  m_Radius: 0.5
---- !u!114 &7072171812833905426
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1113393193735310004}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f8dd1f3660e90114eac8094989791432, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::GunCharacterController
-  currentState: 0
-  originalSpeed: 10
-  playerInput: {fileID: 2640800705571640124}
-  moveAction:
-    m_Name: Move
-    m_Type: 0
-    m_ExpectedControlType: 
-    m_Id: 545a35d9-414a-47a5-976e-b8de1dde42f1
-    m_Processors: 
-    m_Interactions: 
-    m_SingletonActionBindings: []
-    m_Flags: 0
-  waitAction:
-    m_Name: Wait
-    m_Type: 0
-    m_ExpectedControlType: 
-    m_Id: b6604ca6-73e8-459f-b9f2-5eee0144bf02
-    m_Processors: 
-    m_Interactions: 
-    m_SingletonActionBindings: []
-    m_Flags: 0
-  bottomPos: {fileID: 8270586499843573950}
-  floorLayer:
-    serializedVersion: 2
-    m_Bits: 8
-  bottomSize: 1.5
-  paws: {fileID: 0}
 --- !u!232 &8323727154950466415
 DistanceJoint2D:
   m_ObjectHideFlags: 0
@@ -453,9 +435,9 @@ MonoBehaviour:
   rbPlayer: {fileID: 8725384248250218035}
   aimActionRef: {fileID: -4990979050747029019, guid: 69f3ddfd4ba990047a8694e49654f87e, type: 3}
   offset: 0
-  gunForce: 5
+  gunKnockback: 5
   shootForce: 10
   timeBetweenShots: 1
-  jumpChar: {fileID: 0}
   absorbDistance: 2
   aimTolerance: 0.8
+  jumpChar: {fileID: 0}

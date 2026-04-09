@@ -18,26 +18,25 @@ public class GunCharacterController : MonoBehaviour
         Knockback
     }
 
+    [Header("Informações Base")]
     public CharacterState currentState;
-
     [SerializeField] float originalSpeed = 10f;
-    Rigidbody2D rb;
-
     public PlayerInput playerInput;
-    public InputAction moveAction;
-    public InputAction waitAction;
 
+    [Header("Detecção de Solo")]
     [SerializeField] Transform bottomPos;
     [SerializeField] LayerMask floorLayer;
     [SerializeField] float bottomSize = 1.5f;
 
-    Vector2 moveInput;
-
-    bool falling;
-
-    DistanceJoint2D distanceJoint;
+    // Variaveis privadas
+    [HideInInspector]
     public JumpCharacterController paws;
-
+    Vector2 moveInput;
+    Rigidbody2D rb;
+    InputAction moveAction;
+    InputAction waitAction;
+    DistanceJoint2D distanceJoint;
+    bool falling;
     float x;
 
     void Awake()
@@ -56,7 +55,6 @@ public class GunCharacterController : MonoBehaviour
 
         if (moveAction == null)
             Debug.LogError("Não foi encontrada a ação 'Move'. Verifique o Input Map");
-
     }
 
     private void Start()
