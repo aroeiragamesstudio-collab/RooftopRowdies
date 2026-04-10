@@ -490,6 +490,37 @@ MonoBehaviour:
   ropeCircleSegments: 32
   truncateAtRopeLimit: 1
   truncationColor: {r: 1, g: 0.2, b: 0.8, a: 1}
+--- !u!114 &828487273
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 298051273}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 46720791ba34f8a4c926ece31ae5db1a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::JumpCharacterVisualizer
+  jumpChar: {fileID: 828487270}
+  spriteRenderer: {fileID: 828487277}
+  idleColor: {r: 1, g: 1, b: 1, a: 1}
+  walkingColor: {r: 1, g: 1, b: 1, a: 1}
+  fallingColor: {r: 1, g: 0.6, b: 0.2, a: 1}
+  jumpingColor: {r: 1, g: 1, b: 1, a: 1}
+  shotColor: {r: 1, g: 0.2, b: 0.2, a: 1}
+  swingingColor: {r: 0.8, g: 0.4, b: 1, a: 1}
+  satDownColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  flyingColor: {r: 0.2, g: 0.9, b: 1, a: 1}
+  holdStartColor: {r: 0.2, g: 1, b: 0.2, a: 1}
+  holdEndColor: {r: 0.1, g: 0.1, b: 0.1, a: 1}
+  absorbedColor: {r: 1, g: 0.85, b: 0, a: 1}
+  colorLerpSpeed: 12
+--- !u!212 &828487277 stripped
+SpriteRenderer:
+  m_CorrespondingSourceObject: {fileID: 6027070948309438295, guid: 5eaea713b2e067a40ab5363824d0644f, type: 3}
+  m_PrefabInstance: {fileID: 1830491934}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &870583165
 GameObject:
   m_ObjectHideFlags: 0
@@ -501,7 +532,7 @@ GameObject:
   - component: {fileID: 870583168}
   - component: {fileID: 870583167}
   - component: {fileID: 870583166}
-  m_Layer: 6
+  m_Layer: 7
   m_Name: Ceiling
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1029,6 +1060,35 @@ MonoBehaviour:
   ropeCircleSegments: 32
   truncateAtRopeLimit: 1
   truncationColor: {r: 1, g: 0.2, b: 0.8, a: 1}
+--- !u!114 &1814248297
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 283992009}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a76bd0a0dc13a04cbf61f0fee8448a2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GunCharacterVisualizer
+  gunChar: {fileID: 1814248293}
+  spriteRenderer: {fileID: 1814248300}
+  idleColor: {r: 1, g: 1, b: 1, a: 1}
+  walkingColor: {r: 1, g: 1, b: 1, a: 1}
+  fallingColor: {r: 1, g: 0.4, b: 0.2, a: 1}
+  shootingColor: {r: 1, g: 1, b: 0.1, a: 1}
+  knockbackColor: {r: 0.9, g: 0.2, b: 0.5, a: 1}
+  swingingColor: {r: 0.7, g: 0.5, b: 1, a: 1}
+  satDownColor: {r: 0.55, g: 0.55, b: 0.55, a: 1}
+  chargedColor: {r: 0, g: 1, b: 0.6, a: 1}
+  shootFlashDuration: 0.08
+  colorLerpSpeed: 12
+--- !u!212 &1814248300 stripped
+SpriteRenderer:
+  m_CorrespondingSourceObject: {fileID: 1112273706791065528, guid: 842927e28fa2a97428f026f1e2e513aa, type: 3}
+  m_PrefabInstance: {fileID: 1872456527}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1830491934
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1088,6 +1148,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 3999135345264447133, guid: 5eaea713b2e067a40ab5363824d0644f, type: 3}
       insertIndex: -1
       addedObject: {fileID: 828487271}
+    - targetCorrespondingSourceObject: {fileID: 3999135345264447133, guid: 5eaea713b2e067a40ab5363824d0644f, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 828487273}
   m_SourcePrefab: {fileID: 100100000, guid: 5eaea713b2e067a40ab5363824d0644f, type: 3}
 --- !u!1001 &1872456527
 PrefabInstance:
@@ -1148,6 +1211,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 1113393193735310004, guid: 842927e28fa2a97428f026f1e2e513aa, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1814248294}
+    - targetCorrespondingSourceObject: {fileID: 1113393193735310004, guid: 842927e28fa2a97428f026f1e2e513aa, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1814248297}
   m_SourcePrefab: {fileID: 100100000, guid: 842927e28fa2a97428f026f1e2e513aa, type: 3}
 --- !u!1 &1981557760
 GameObject:

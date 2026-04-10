@@ -165,6 +165,7 @@ public class JumpCharacterController : MonoBehaviour
 
         if (holding)
         {
+            currentState = CharacterState.HoldingSurface;
             timePassed += Time.deltaTime;
 
             if (timePassed >= holdTime)
@@ -407,6 +408,9 @@ public class JumpCharacterController : MonoBehaviour
             return false;
         }
     }
+
+    public float HoldProgress => holdTime > 0f ? Mathf.Clamp01(timePassed / holdTime) : 0f;
+    public float FlyProgress => flightTime > 0f ? Mathf.Clamp01(timePassedFlying / flightTime) : 0f;
 
     private void OnDrawGizmosSelected()
     {

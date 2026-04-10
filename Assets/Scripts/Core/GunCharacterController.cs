@@ -37,6 +37,7 @@ public class GunCharacterController : MonoBehaviour
     InputAction waitAction;
     DistanceJoint2D distanceJoint;
     bool falling;
+    public bool absorbed;
     float x;
 
     void Awake()
@@ -192,4 +193,6 @@ public class GunCharacterController : MonoBehaviour
             return false;
         }
     }
+
+    public bool IsAllyAbsorbed => absorbed;
 }

@@ -180,8 +180,9 @@ MonoBehaviour:
   floorLayer:
     serializedVersion: 2
     m_Bits: 8
-  bottomSize: 1.5
+  bottomSize: {x: 1.5, y: 0.2}
   paws: {fileID: 0}
+  absorbed: 0
 --- !u!114 &2640800705571640124
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -275,7 +276,7 @@ GameObject:
   - component: {fileID: 4243284009588565762}
   - component: {fileID: 7434648553087169220}
   m_Layer: 0
-  m_Name: Image
+  m_Name: GunSprite
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

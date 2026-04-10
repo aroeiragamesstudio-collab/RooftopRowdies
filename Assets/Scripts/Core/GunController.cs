@@ -180,6 +180,7 @@ public class GunController : MonoBehaviour
         if(distanceToPlayer <= absorbDistance && aimDotProduct >= aimTolerance)
         {
             absorbed = true;
+            parentInput.GetComponent<GunCharacterController>().absorbed = true;
             ChangeAbsorbedPlayer(transform.position, Vector2.zero);
         }
     }
