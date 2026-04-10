@@ -61,6 +61,8 @@ public class GunController : MonoBehaviour
 
     private void Update()
     {
+        if (parentInput.GetComponent<GunCharacterController>().waiting) return;
+
         if (isUsingMouse)
         {
             AimGunWithMouse();
@@ -221,6 +223,7 @@ public class GunController : MonoBehaviour
         Vector2 shootVelocity = shootDirection * shootForce;
 
         absorbed = false;
+        parentInput.GetComponent<GunCharacterController>().absorbed = false;
         ChangeAbsorbedPlayer(shootPosition, shootVelocity);
     }
 }

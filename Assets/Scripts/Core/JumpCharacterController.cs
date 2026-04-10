@@ -44,6 +44,11 @@ public class JumpCharacterController : MonoBehaviour
     public float flightTime = 3f;
     public float flightSpeed = 2f;
 
+    [Header("Ajuste de Corda")]
+    [SerializeField] RopeAdjustCondition ropeAdjustCondition = RopeAdjustCondition.OnlyWhenAllyWaiting;
+    [SerializeField] float ropeAdjustSpeed = 2f;
+    [SerializeField] float ropeMinDistance = 1f;
+    [SerializeField] float ropeMaxDistance = 15f;
 
     Vector2 moveInput;
     float x;
@@ -60,7 +65,8 @@ public class JumpCharacterController : MonoBehaviour
     public bool beingShot;
 
     float timePassed;
-    public float timePassedFlying;
+    float timePassedFlying;
+    bool jumping;
     bool holding;
     bool startHold;
     bool falling;
@@ -141,6 +147,8 @@ public class JumpCharacterController : MonoBehaviour
             {
                 Jump();
             }
+
+            HandleRopeAdjust();
         }
 
         // VERIFICAR SE NÃO FAZ MAIS SENTIDO SEGURAR MULTIPLAS VEZES AO INVÉS DE SÓ UMA
@@ -230,6 +238,7 @@ public class JumpCharacterController : MonoBehaviour
 
                 break;
             case CharacterState.Jumping:
+                rb.linearVelocityX = moveInput.x * originalSpeed;
                 break;
             case CharacterState.Shot:
                 rb.linearVelocity = new Vector2(rb.linearVelocityX, rb.linearVelocityY);
@@ -274,6 +283,7 @@ public class JumpCharacterController : MonoBehaviour
     private void Jump()
     {
         rb.linearVelocity = Vector2.up * originalJumpForce;
+        jumping = true;
     }
 
     private void Wait()
@@ -342,6 +352,13 @@ public class JumpCharacterController : MonoBehaviour
             return;
         }
 
+        if (jumping == true && rb.linearVelocityY > 0f)
+        {
+            currentState = CharacterState.Jumping;
+            return;
+        }
+        jumping = false;
+
         if (waiting)
         {
             currentState = CharacterState.SatDown;
@@ -354,7 +371,7 @@ public class JumpCharacterController : MonoBehaviour
 
             falling = true;
         }
-        else if (rb.linearVelocityY < 0f && !OnGround() && porky.OnGround())
+        else if (rb.linearVelocityY < 0f && !OnGround() && porky.currentState == GunCharacterController.CharacterState.SatDown)
         {
             currentState = CharacterState.Swinging;
         }
@@ -395,6 +412,36 @@ public class JumpCharacterController : MonoBehaviour
 
             rb.linearVelocity = new Vector2(rb.linearVelocityX, rb.linearVelocityY);
         }
+    }
+
+    private void HandleRopeAdjust()
+    {
+        if (distanceJoint == null || porky == null) return;
+
+        bool conditionMet = ropeAdjustCondition switch
+        {
+            RopeAdjustCondition.Always => true,
+            RopeAdjustCondition.OnlyWhenAllyWaiting => porky.currentState == GunCharacterController.CharacterState.SatDown,
+            RopeAdjustCondition.OnlyWhenSwinging => currentState == CharacterState.Swinging,
+            RopeAdjustCondition.Never => false,
+            _ => false
+        };
+
+        if (!conditionMet) return;
+
+        // moveInput.y is already being read — W = +1 (extend), S = -1 (retract)
+        // We invert so W = shorter (pull up) and S = longer (let out) — change sign if you prefer the opposite
+        float verticalInput = moveInput.y;
+        AdjustRopeDistance(verticalInput);
+    }
+
+    public void AdjustRopeDistance(float verticalInput)
+    {
+        if (distanceJoint == null) return;
+        if (Mathf.Abs(verticalInput) < 0.1f) return;
+
+        float newDistance = distanceJoint.distance - (verticalInput * ropeAdjustSpeed * Time.deltaTime);
+        distanceJoint.distance = Mathf.Clamp(newDistance, ropeMinDistance, ropeMaxDistance);
     }
 
     public bool IsKinematic()

@@ -216,17 +216,24 @@ MonoBehaviour:
   topPos: {fileID: 6728050430414016210}
   floorLayer:
     serializedVersion: 2
-    m_Bits: 8
+    m_Bits: 136
   wallLayer:
     serializedVersion: 2
     m_Bits: 64
   topLayer:
     serializedVersion: 2
     m_Bits: 128
-  bottomSize: 1.5
-  sideSize: 0.1
-  topSize: 0.1
+  bottomSize: {x: 1.5, y: 0.1}
+  sideSize: {x: 0.1, y: 1.5}
+  topSize: {x: 1.5, y: 0.1}
   timeToNormal: 4
+  flightGravity: 0.2
+  flightTime: 3
+  flightSpeed: 2
+  ropeAdjustCondition: 1
+  ropeAdjustSpeed: 2
+  ropeMinDistance: 1
+  ropeMaxDistance: 15
   beingShot: 0
   porky: {fileID: 0}
 --- !u!114 &4321707408902692906

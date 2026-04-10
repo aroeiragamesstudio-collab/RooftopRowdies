@@ -2,42 +2,45 @@ using UnityEngine;
 
 /// <summary>
 /// Trajectory visualizer for level design and playtesting.
-/// Attach this script to a character (Cat or Pig) to preview their movement arc
-/// in the Scene view — both in Edit Mode and during Play Mode.
+/// Attach one instance to the Cat (JumpCharacterController) and one to the Pig (GunCharacterController).
 ///
-/// LIVE VALUES (Play Mode):
-///   During Play Mode, the visualizer reads values directly from the character
-///   components instead of using the Inspector fields. This means:
+/// ── ROPE CIRCLE ──────────────────────────────────────────────────────────────
+/// Both instances now find the DistanceJoint2D on the Cat (the only one that has it)
+/// and read joint.distance from it. This means both circles are always in sync,
+/// even as the players adjust the rope length at runtime.
 ///
-///   CatJump:
-///     - Jump force is read live from JumpCharacterController.originalJumpForce
-///     - Horizontal speed and direction are read live from JumpCharacterController
-///       (specifically the moveInput the cat is currently holding)
-///     - The arc updates in real time as you move the analog stick / hold a direction key
+/// ── STATE-AWARE ARCS ─────────────────────────────────────────────────────────
+/// The visualizer reads currentState from the character components every frame
+/// and automatically shows the correct arc without any manual switching:
 ///
-///   PigKnockback:
-///     - Force is read live from GunController.gunForce
-///     - Direction is read live from the gun child object's transform.right,
-///       which GunController already rotates toward the mouse/stick every frame.
-///       Knockback goes in -transform.right (opposite to aim), matching your Knockback() code.
+///   CAT (JumpCharacterController):
+///     Idle / Walking     → Predictive jump arc from ground (what happens if they jump now)
+///     Jumping            → Freeze arc from current mid-air position + live arc (see below)
+///     Falling            → Arc using current rb.linearVelocity (where are they going)
+///     Flying             → Arc using flightGravity instead of normal gravity
+///     Shot               → Arc using current rb.linearVelocity
+///     Swinging           → No arc (pendulum, not kinematically predictable)
+///     HoldingSurface     → No arc (static)
+///     SatDown            → No arc (waiting)
+///     Absorbed           → No arc (controlled by Pig)
 ///
-///   CatShot:
-///     - Same force and gun transform as PigKnockback, but direction is +transform.right
-///       (forward, matching your ShootPlayer() code).
+///   PIG (GunCharacterController):
+///     Idle / Walking / Falling → Knockback arc in -gun.transform.right direction
+///     absorbed == true         → CatShot arc in +gun.transform.right direction
+///     Swinging                 → No arc
+///     SatDown / Knockback      → No arc
 ///
-///   Inspector fields (launchSpeed, launchAngleDeg, etc.) are still used in Edit Mode
-///   and as fallback if the relevant component is not found at runtime.
+/// ── JUMP FREEZE ARC ──────────────────────────────────────────────────────────
+/// When the Cat enters the Jumping state:
+///   - A FREEZE ARC is drawn from the Cat's CURRENT position (shrinks as they travel)
+///   - The vertical component is fixed at originalJumpForce (the actual launch value)
+///   - The horizontal component updates live with moveInput.x (so pressing left/right
+///     while airborne immediately shifts where the freeze arc predicts landing)
+///   - When the Cat lands (state leaves Jumping), the freeze arc disappears
+///   - The regular LIVE ARC continues showing alongside it in a different color
 ///
-/// HOW TO VIEW DURING PLAY MODE:
-///   Keep the Scene view tab open alongside the Game view.
-///   The arc draws every frame via Debug.DrawLine (Scene view only).
-///
-/// ROPE LIMIT FEATURES:
-///   Option 1 — Circle centered on the connected body showing max reach.
-///   Option 2 — Arc truncation at rope length with a cutoff marker.
-///
-/// BUILDS:
-///   Everything inside #if UNITY_EDITOR is stripped from your final build.
+/// ── BUILDS ───────────────────────────────────────────────────────────────────
+/// Everything inside #if UNITY_EDITOR is stripped from builds automatically.
 /// </summary>
 [ExecuteAlways]
 public class TrajectoryVisualizer : MonoBehaviour
@@ -51,7 +54,7 @@ public class TrajectoryVisualizer : MonoBehaviour
     }
 
     [Header("Character Setup")]
-    [Tooltip("Which movement to visualize.")]
+    [Tooltip("Which character this visualizer is attached to.")]
     public CharacterType characterType = CharacterType.CatJump;
 
     [Header("Launch Parameters (Edit Mode / Fallback)")]
@@ -76,24 +79,29 @@ public class TrajectoryVisualizer : MonoBehaviour
     [Range(10, 200)]
     public int resolution = 60;
 
-    [Tooltip("When disabled, the arc only draws while this GameObject is selected in the Scene view.")]
+    [Tooltip("When disabled, the arc only draws while this GameObject is selected.")]
     public bool alwaysDraw = true;
 
     [Header("Visual Settings")]
+    [Tooltip("Color of the main predictive arc.")]
     public Color arcColor = Color.cyan;
 
-    [Tooltip("Duration each Debug.DrawLine segment stays visible. " +
-             "Keep at 0 to redraw every frame (persistent-looking arc during Play Mode).")]
+    [Tooltip("Color of the freeze arc shown during a jump.")]
+    public Color freezeArcColor = new Color(1f, 1f, 0f, 0.8f); // yellow
+
+    [Tooltip("Duration each Debug.DrawLine stays visible. Keep at 0 for a live-updating arc.")]
     public float lineDuration = 0f;
 
     [Header("Rope Limit — Option 1: Constraint Circle")]
-    [Tooltip("Draw a circle around the connected body showing the rope boundary.")]
+    [Tooltip("Draw a circle around the connected body showing the rope boundary. " +
+             "Both character instances read from the same joint on the Cat, " +
+             "so both circles always reflect the current rope length.")]
     public bool showRopeLimit = true;
 
     [Tooltip("Color of the rope limit circle.")]
     public Color ropeLimitColor = new Color(1f, 0.5f, 0f, 0.8f);
 
-    [Tooltip("Segments used to draw the circle in Play Mode (Gizmos handles it automatically in Edit Mode).")]
+    [Tooltip("Segments used to draw the circle via Debug.DrawLine in Play Mode.")]
     [Range(16, 64)]
     public int ropeCircleSegments = 32;
 
@@ -107,35 +115,63 @@ public class TrajectoryVisualizer : MonoBehaviour
 #if UNITY_EDITOR
 
     // -------------------------------------------------------------------------
-    // Cached component references — populated in Start so we don't search
-    // every frame with GetComponent during Play Mode.
+    // Cached references — set once in Start, reused every frame
     // -------------------------------------------------------------------------
 
-    // Shared
     private Rigidbody2D _rb;
+
+    // The joint always lives on the Cat, regardless of which character this
+    // visualizer is attached to. Both instances find it the same way.
     private DistanceJoint2D _joint;
 
-    // Cat
+    // Cat-side references
     private JumpCharacterController _jumpChar;
 
-    // Pig / Gun
+    // Pig-side references
+    private GunCharacterController _gunChar;
     private GunController _gun;
 
-    // Cached private field accessors via reflection.
-    // We grab these once in Start rather than every frame — reflection is slow,
-    // caching the FieldInfo is the standard pattern to avoid that cost.
+    // Reflection field cache — grabbed once in Start, used every frame
     private System.Reflection.FieldInfo _jumpForceField;
     private System.Reflection.FieldInfo _jumpSpeedField;
     private System.Reflection.FieldInfo _moveInputField;
+    private System.Reflection.FieldInfo _flightGravityField;
+    private System.Reflection.FieldInfo _gunCharAbsorbedField;
+
+    // -------------------------------------------------------------------------
+    // Jump freeze arc state
+    // -------------------------------------------------------------------------
+
+    // The vertical component of the jump is fixed at the moment of launch.
+    // We store it so the freeze arc always uses the correct upward force
+    // even as the horizontal component changes live with player input.
+    private float _frozenVerticalVelocity = 0f;
+    private bool _isJumpFreezeActive = false;
+
+    // We track the previous state to detect state transitions (entering/leaving Jumping)
+    private JumpCharacterController.CharacterState _prevCatState =
+        JumpCharacterController.CharacterState.Idle;
+
+    // -------------------------------------------------------------------------
+    // Initialization
+    // -------------------------------------------------------------------------
 
     private void Start()
     {
         if (!Application.isPlaying) return;
 
         _rb = GetComponent<Rigidbody2D>();
-        _joint = GetComponent<DistanceJoint2D>();
 
-        // Cat setup
+        // ── Find the DistanceJoint2D ──────────────────────────────────────────
+        // The joint always lives on the Cat (JumpCharacterController).
+        // Whether this visualizer is on the Cat or the Pig, we find it the same way.
+        // This ensures both visualizer instances read the same joint.distance,
+        // fixing the bug where one instance showed a stale rope length.
+        var cat = FindFirstObjectByType<JumpCharacterController>();
+        if (cat != null)
+            _joint = cat.GetComponent<DistanceJoint2D>();
+
+        // ── Cat setup ─────────────────────────────────────────────────────────
         _jumpChar = GetComponent<JumpCharacterController>();
         if (_jumpChar != null)
         {
@@ -143,80 +179,115 @@ public class TrajectoryVisualizer : MonoBehaviour
             _jumpForceField = typeof(JumpCharacterController).GetField("originalJumpForce", flags);
             _jumpSpeedField = typeof(JumpCharacterController).GetField("originalSpeed", flags);
             _moveInputField = typeof(JumpCharacterController).GetField("moveInput", flags);
+            _flightGravityField = typeof(JumpCharacterController).GetField("flightGravity", flags);
         }
 
-        // Pig setup — gun is a child object
+        // ── Pig setup ─────────────────────────────────────────────────────────
+        _gunChar = GetComponent<GunCharacterController>();
         _gun = GetComponentInChildren<GunController>();
+
+        if (_gunChar != null)
+        {
+            // 'absorbed' is a private bool on GunCharacterController
+            var flags = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+            _gunCharAbsorbedField = typeof(GunCharacterController).GetField("absorbed", flags);
+        }
     }
 
     // -------------------------------------------------------------------------
-    // Edit Mode callbacks
+    // Edit Mode
     // -------------------------------------------------------------------------
 
     private void OnDrawGizmos()
     {
         if (Application.isPlaying) return;
         if (!alwaysDraw) return;
-        DrawTrajectoryGizmos();
+        DrawEditMode();
     }
 
     private void OnDrawGizmosSelected()
     {
         if (Application.isPlaying) return;
-        DrawTrajectoryGizmos();
+        DrawEditMode();
     }
 
     // -------------------------------------------------------------------------
-    // Play Mode: runs every frame
+    // Play Mode
     // -------------------------------------------------------------------------
 
     private void Update()
     {
         if (!Application.isPlaying) return;
-        DrawTrajectoryDebug();
+
+        // ── Jump freeze arc state machine ─────────────────────────────────────
+        // We detect transitions into and out of Jumping by comparing the current
+        // state with what it was last frame. This avoids polling WasPressedThisFrame
+        // from a separate script and keeps the visualizer fully self-contained.
+        if (_jumpChar != null)
+        {
+            var currentCatState = _jumpChar.currentState;
+
+            // Entered Jumping this frame
+            if (currentCatState == JumpCharacterController.CharacterState.Jumping &&
+                _prevCatState != JumpCharacterController.CharacterState.Jumping)
+            {
+                // Capture the vertical component right now.
+                // rb.linearVelocityY at this point is exactly what Jump() set:
+                //   rb.linearVelocity = Vector2.up * originalJumpForce
+                // We read it from the rb rather than from the field so we get
+                // the actual physics value, not just the configured constant.
+                _frozenVerticalVelocity = _rb != null ? _rb.linearVelocityY : GetJumpForce();
+                _isJumpFreezeActive = true;
+            }
+
+            // Left Jumping (landed or transitioned to another state)
+            if (currentCatState != JumpCharacterController.CharacterState.Jumping &&
+                _prevCatState == JumpCharacterController.CharacterState.Jumping)
+            {
+                _isJumpFreezeActive = false;
+            }
+
+            _prevCatState = currentCatState;
+        }
+
+        DrawPlayMode();
     }
 
     // -------------------------------------------------------------------------
-    // Edit Mode drawing — Gizmos API
+    // Edit Mode drawing — Inspector values, Gizmos API
     // -------------------------------------------------------------------------
 
-    private void DrawTrajectoryGizmos()
+    private void DrawEditMode()
     {
         float gravity = Physics2D.gravity.y;
-        Vector2 velocity = GetInitialVelocity();   // Inspector values
+        Vector2 velocity = GetInitialVelocity();
         Vector3 startPos = transform.position;
 
-        DistanceJoint2D joint = GetComponent<DistanceJoint2D>();
+        // In Edit Mode, find the joint locally (Start hasn't run yet)
+        DistanceJoint2D joint = FindFirstObjectByType<JumpCharacterController>()
+                                        ?.GetComponent<DistanceJoint2D>();
         bool hasJoint = joint != null && joint.connectedBody != null;
         Vector3 connectedPos = hasJoint ? (Vector3)joint.connectedBody.position : Vector3.zero;
         float ropeLength = hasJoint ? joint.distance : 0f;
 
-        if (showRopeLimit && hasJoint)
-        {
-            Gizmos.color = ropeLimitColor;
-            Gizmos.DrawWireSphere(connectedPos, ropeLength);
-            Gizmos.color = new Color(ropeLimitColor.r, ropeLimitColor.g, ropeLimitColor.b, 0.3f);
-            Gizmos.DrawLine(startPos, connectedPos);
-        }
-
-        DrawArcGizmos(startPos, velocity, gravity, hasJoint, connectedPos, ropeLength);
+        DrawRopeLimitGizmos(startPos, connectedPos, ropeLength, hasJoint);
+        DrawArcGizmos(startPos, velocity, gravity, hasJoint, connectedPos, ropeLength, arcColor);
     }
 
     // -------------------------------------------------------------------------
-    // Play Mode drawing — Debug.DrawLine, reads live component values
+    // Play Mode drawing — live component values, Debug.DrawLine
     // -------------------------------------------------------------------------
 
-    private void DrawTrajectoryDebug()
+    private void DrawPlayMode()
     {
         float gravity = Physics2D.gravity.y;
-        Vector2 velocity = GetLiveVelocity();       // Live component values
         Vector3 startPos = transform.position;
 
-        // Re-read joint every frame — joint.distance can be changed at runtime
         bool hasJoint = _joint != null && _joint.connectedBody != null;
         Vector3 connectedPos = hasJoint ? (Vector3)_joint.connectedBody.position : Vector3.zero;
         float ropeLength = hasJoint ? _joint.distance : 0f;
 
+        // ── Rope circle ───────────────────────────────────────────────────────
         if (showRopeLimit && hasJoint)
         {
             DrawDebugCircle(connectedPos, ropeLength, ropeLimitColor, ropeCircleSegments);
@@ -227,11 +298,222 @@ public class TrajectoryVisualizer : MonoBehaviour
             );
         }
 
-        DrawArcDebug(startPos, velocity, gravity, hasJoint, connectedPos, ropeLength);
+        // ── State-aware arc selection ─────────────────────────────────────────
+        if (_jumpChar != null)
+            DrawCatStateArc(startPos, gravity, hasJoint, connectedPos, ropeLength);
+        else if (_gunChar != null)
+            DrawPigStateArc(startPos, gravity, hasJoint, connectedPos, ropeLength);
+        else
+            DrawArcDebug(startPos, GetLiveVelocity(), gravity, hasJoint, connectedPos, ropeLength, arcColor);
     }
 
     // -------------------------------------------------------------------------
-    // GetInitialVelocity — Edit Mode, uses Inspector fields
+    // Cat state-aware arc dispatcher
+    // -------------------------------------------------------------------------
+
+    private void DrawCatStateArc(
+        Vector3 startPos, float gravity,
+        bool hasJoint, Vector3 connectedPos, float ropeLength)
+    {
+        var state = _jumpChar.currentState;
+
+        switch (state)
+        {
+            // ── On the ground: show what happens if they jump right now ───────
+            case JumpCharacterController.CharacterState.Idle:
+            case JumpCharacterController.CharacterState.Walking:
+                DrawArcDebug(startPos, GetLiveCatJumpVelocity(), gravity,
+                             hasJoint, connectedPos, ropeLength, arcColor);
+                break;
+
+            // ── Actively jumping: show freeze arc + live arc ──────────────────
+            // The freeze arc uses the captured vertical velocity plus live horizontal input.
+            // The live arc uses fully live values for comparison.
+            // Both originate from the CURRENT position so the freeze arc shrinks
+            // naturally as the character travels through the air.
+            case JumpCharacterController.CharacterState.Jumping:
+                if (_isJumpFreezeActive)
+                {
+                    // Horizontal component: live input so pressing left/right shifts
+                    // the predicted landing in real time.
+                    float liveHorizontal = GetLiveCatHorizontalVelocity();
+                    Vector2 freezeVelocity = new Vector2(liveHorizontal, _frozenVerticalVelocity);
+
+                    DrawArcDebug(startPos, freezeVelocity, gravity,
+                                 hasJoint, connectedPos, ropeLength, freezeArcColor);
+                }
+                // Live arc alongside in main color
+                DrawArcDebug(startPos, GetLiveCatJumpVelocity(), gravity,
+                             hasJoint, connectedPos, ropeLength, arcColor);
+                break;
+
+            // ── Falling: show where they're actually going right now ──────────
+            // We use rb.linearVelocity directly — this is the real physics velocity,
+            // not a predicted one. Useful for seeing where a fall will end up.
+            case JumpCharacterController.CharacterState.Falling:
+                if (_rb != null)
+                    DrawArcDebug(startPos, _rb.linearVelocity, gravity,
+                                 hasJoint, connectedPos, ropeLength, arcColor);
+                break;
+
+            // ── Flying: same as falling but with reduced gravity ──────────────
+            // flightGravity is a multiplier on gravity (e.g. 0.2), so the actual
+            // downward acceleration is gravity * flightGravity. We build the
+            // effective gravity value and pass it to SampleArc.
+            case JumpCharacterController.CharacterState.Flying:
+                float flightGravMult = _flightGravityField != null
+                    ? (float)_flightGravityField.GetValue(_jumpChar)
+                    : 0.2f;
+                float effectiveGravity = Physics2D.gravity.y * flightGravMult;
+                if (_rb != null)
+                    DrawArcDebug(startPos, _rb.linearVelocity, effectiveGravity,
+                                 hasJoint, connectedPos, ropeLength, arcColor);
+                break;
+
+            // ── Shot: arc using actual physics velocity at this moment ────────
+            case JumpCharacterController.CharacterState.Shot:
+                if (_rb != null)
+                    DrawArcDebug(startPos, _rb.linearVelocity, gravity,
+                                 hasJoint, connectedPos, ropeLength, arcColor);
+                break;
+
+            // ── These states have no meaningful free-flight arc ───────────────
+            // Swinging:      pendulum physics, not kinematically predictable
+            // HoldingSurface: static body, not moving
+            // SatDown:        waiting, not moving
+            // Absorbed:       position controlled by Pig, not this character
+            case JumpCharacterController.CharacterState.Swinging:
+            case JumpCharacterController.CharacterState.HoldingSurface:
+            case JumpCharacterController.CharacterState.SatDown:
+            case JumpCharacterController.CharacterState.Absorbed:
+                break;
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Pig state-aware arc dispatcher
+    // -------------------------------------------------------------------------
+
+    private void DrawPigStateArc(
+        Vector3 startPos, float gravity,
+        bool hasJoint, Vector3 connectedPos, float ropeLength)
+    {
+        var state = _gunChar.currentState;
+
+        // Check absorbed separately because it's a field, not a state on GunCharacterController.
+        // We use the public IsAllyAbsorbed property if available, otherwise fall back to reflection.
+        bool catAbsorbed = _gunChar.IsAllyAbsorbed;
+
+        switch (state)
+        {
+            case GunCharacterController.CharacterState.Idle:
+            case GunCharacterController.CharacterState.Walking:
+            case GunCharacterController.CharacterState.Falling:
+                if (catAbsorbed)
+                {
+                    // Cat is inside the gun — show where it will be shot
+                    DrawArcDebug(startPos, GetLiveCatShotVelocity(), gravity,
+                                 hasJoint, connectedPos, ropeLength, arcColor);
+                }
+                else
+                {
+                    // Cat is free — show pig knockback arc
+                    DrawArcDebug(startPos, GetLivePigKnockbackVelocity(), gravity,
+                                 hasJoint, connectedPos, ropeLength, arcColor);
+                }
+                break;
+
+            // ── These states have no meaningful arc ───────────────────────────
+            // Swinging:  pendulum
+            // SatDown:   waiting, kinematic
+            // Knockback: mid-knockback, live velocity in rb is more accurate
+            //            but showing it would be redundant with what you can see
+            case GunCharacterController.CharacterState.Swinging:
+            case GunCharacterController.CharacterState.SatDown:
+            case GunCharacterController.CharacterState.Knockback:
+                break;
+
+            // Shooting state: show knockback (what the pig will feel)
+            case GunCharacterController.CharacterState.Shooting:
+                DrawArcDebug(startPos, GetLivePigKnockbackVelocity(), gravity,
+                             hasJoint, connectedPos, ropeLength, arcColor);
+                break;
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Velocity builders — live values from components
+    // -------------------------------------------------------------------------
+
+    private Vector2 GetLiveVelocity()
+    {
+        switch (characterType)
+        {
+            case CharacterType.CatJump: return GetLiveCatJumpVelocity();
+            case CharacterType.PigKnockback: return GetLivePigKnockbackVelocity();
+            case CharacterType.CatShot: return GetLiveCatShotVelocity();
+            default: return AngleToVelocity(launchAngleDeg, launchSpeed);
+        }
+    }
+
+    private Vector2 GetLiveCatJumpVelocity()
+    {
+        if (_jumpChar == null)
+            return new Vector2(horizontalSpeed * horizontalDirection, launchSpeed);
+
+        float jumpForce = GetJumpForce();
+        float speed = _jumpSpeedField != null
+            ? (float)_jumpSpeedField.GetValue(_jumpChar)
+            : horizontalSpeed;
+
+        return new Vector2(speed * GetLiveCatInputX(), jumpForce);
+    }
+
+    /// <summary>
+    /// Returns only the horizontal velocity component, using live moveInput.x.
+    /// Separated so the freeze arc can combine it with a fixed vertical.
+    /// </summary>
+    private float GetLiveCatHorizontalVelocity()
+    {
+        if (_jumpChar == null) return horizontalSpeed * horizontalDirection;
+
+        float speed = _jumpSpeedField != null
+            ? (float)_jumpSpeedField.GetValue(_jumpChar)
+            : horizontalSpeed;
+
+        return speed * GetLiveCatInputX();
+    }
+
+    private float GetLiveCatInputX()
+    {
+        if (_moveInputField == null) return horizontalDirection;
+        Vector2 input = (Vector2)_moveInputField.GetValue(_jumpChar);
+        return input.x;
+    }
+
+    private float GetJumpForce()
+    {
+        return _jumpForceField != null
+            ? (float)_jumpForceField.GetValue(_jumpChar)
+            : launchSpeed;
+    }
+
+    private Vector2 GetLivePigKnockbackVelocity()
+    {
+        if (_gun == null) return AngleToVelocity(launchAngleDeg, launchSpeed);
+        // Knockback goes opposite to aim: matches knockbackDir = -aimDirection in GunController
+        return -(Vector2)_gun.transform.right * _gun.gunKnockback;
+    }
+
+    private Vector2 GetLiveCatShotVelocity()
+    {
+        if (_gun == null) return AngleToVelocity(launchAngleDeg, launchSpeed);
+        // Shot goes forward: matches shootDirection = transform.right in GunController
+        return (Vector2)_gun.transform.right * _gun.shootForce;
+    }
+
+    // -------------------------------------------------------------------------
+    // Edit Mode velocity — Inspector values only
     // -------------------------------------------------------------------------
 
     private Vector2 GetInitialVelocity()
@@ -240,163 +522,67 @@ public class TrajectoryVisualizer : MonoBehaviour
         {
             case CharacterType.CatJump:
                 return new Vector2(horizontalSpeed * horizontalDirection, launchSpeed);
-
-            case CharacterType.PigKnockback:
-            case CharacterType.CatShot:
-            case CharacterType.Custom:
             default:
                 return AngleToVelocity(launchAngleDeg, launchSpeed);
         }
     }
 
     // -------------------------------------------------------------------------
-    // GetLiveVelocity — Play Mode, reads directly from components
+    // Arc drawing — Gizmos (Edit Mode)
     // -------------------------------------------------------------------------
 
-    /// <summary>
-    /// Reads the current state of the character components to build a velocity
-    /// vector that matches what the character would actually launch at right now.
-    ///
-    /// Falls back to Inspector values if the relevant component is not found,
-    /// so this is safe even if the script is placed on an unexpected object.
-    /// </summary>
-    private Vector2 GetLiveVelocity()
+    private void DrawRopeLimitGizmos(
+        Vector3 startPos, Vector3 connectedPos, float ropeLength, bool hasJoint)
     {
-        switch (characterType)
-        {
-            case CharacterType.CatJump:
-                return GetLiveCatJumpVelocity();
+        if (!showRopeLimit || !hasJoint) return;
 
-            case CharacterType.PigKnockback:
-                return GetLivePigKnockbackVelocity();
-
-            case CharacterType.CatShot:
-                return GetLiveCatShotVelocity();
-
-            case CharacterType.Custom:
-            default:
-                return AngleToVelocity(launchAngleDeg, launchSpeed);
-        }
+        Gizmos.color = ropeLimitColor;
+        Gizmos.DrawWireSphere(connectedPos, ropeLength);
+        Gizmos.color = new Color(ropeLimitColor.r, ropeLimitColor.g, ropeLimitColor.b, 0.3f);
+        Gizmos.DrawLine(startPos, connectedPos);
     }
-
-    /// <summary>
-    /// Cat jump velocity, built from live component state.
-    ///
-    /// Vertical component: originalJumpForce — this is always the same value
-    /// since Jump() sets velocity to Vector2.up * originalJumpForce directly.
-    ///
-    /// Horizontal component: originalSpeed * moveInput.x
-    /// moveInput.x is the current stick/key horizontal input, so the arc
-    /// leans left or right in real time as the player holds a direction.
-    /// If moveInput.x is 0 (no input held), the arc goes straight up.
-    /// </summary>
-    private Vector2 GetLiveCatJumpVelocity()
-    {
-        if (_jumpChar == null) // Fallback
-            return new Vector2(horizontalSpeed * horizontalDirection, launchSpeed);
-
-        float jumpForce = _jumpForceField != null
-            ? (float)_jumpForceField.GetValue(_jumpChar)
-            : launchSpeed;
-
-        float speed = _jumpSpeedField != null
-            ? (float)_jumpSpeedField.GetValue(_jumpChar)
-            : horizontalSpeed;
-
-        // moveInput is a Vector2 in JumpCharacterController.
-        // We read .x for horizontal direction — positive = right, negative = left.
-        float inputX = 0f;
-        if (_moveInputField != null)
-        {
-            Vector2 input = (Vector2)_moveInputField.GetValue(_jumpChar);
-            inputX = input.x;
-        }
-
-        return new Vector2(speed * inputX, jumpForce);
-    }
-
-    /// <summary>
-    /// Pig knockback velocity, built from live component state.
-    ///
-    /// GunController rotates the gun child's transform toward the mouse/stick
-    /// every frame in AimGunWithMouse() / AimGunWithStick().
-    /// transform.right is therefore always the live aim direction.
-    ///
-    /// Your Knockback() code does: knockbackDir = -aimDirection
-    /// So we negate transform.right here to match exactly.
-    /// </summary>
-    private Vector2 GetLivePigKnockbackVelocity()
-    {
-        if (_gun == null) // Fallback
-            return AngleToVelocity(launchAngleDeg, launchSpeed);
-
-        // -transform.right = knockback direction (opposite to aim)
-        Vector2 knockbackDir = -(Vector2)_gun.transform.right;
-        return knockbackDir * _gun.gunKnockback;
-    }
-
-    /// <summary>
-    /// Cat shot velocity, built from live component state.
-    ///
-    /// Your ShootPlayer() code does:
-    ///   shootDirection = transform.right
-    ///   shootVelocity  = shootDirection * gunForce
-    /// So we read the same gun transform.right and gunForce directly.
-    /// </summary>
-    private Vector2 GetLiveCatShotVelocity()
-    {
-        if (_gun == null) // Fallback
-            return AngleToVelocity(launchAngleDeg, launchSpeed);
-
-        Vector2 shotDir = (Vector2)_gun.transform.right;
-        return shotDir * _gun.gunKnockback;
-    }
-
-    // -------------------------------------------------------------------------
-    // Arc drawing — separated so Gizmos and Debug paths share the same loop
-    // -------------------------------------------------------------------------
 
     private void DrawArcGizmos(
         Vector3 startPos, Vector2 velocity, float gravity,
-        bool hasJoint, Vector3 connectedPos, float ropeLength)
+        bool hasJoint, Vector3 connectedPos, float ropeLength,
+        Color color)
     {
-        Vector3 previousPoint = startPos;
+        Vector3 prev = startPos;
         float highestY = startPos.y;
         Vector3 highestPoint = startPos;
         Vector3 landingPoint = startPos;
         bool truncated = false;
         Vector3 truncationPoint = startPos;
-
         float dt = simulationDuration / resolution;
-        Gizmos.color = arcColor;
+
+        Gizmos.color = color;
 
         for (int i = 1; i <= resolution; i++)
         {
             float t = i * dt;
-            Vector3 currentPoint = SampleArc(startPos, velocity, gravity, t);
+            Vector3 curr = SampleArc(startPos, velocity, gravity, t);
 
             if (truncateAtRopeLimit && hasJoint && !truncated)
             {
-                if (Vector2.Distance(currentPoint, connectedPos) > ropeLength)
+                if (Vector2.Distance(curr, connectedPos) > ropeLength)
                 {
-                    truncationPoint = FindRopeCrossing(previousPoint, currentPoint, connectedPos, ropeLength);
+                    truncationPoint = FindRopeCrossing(prev, curr, connectedPos, ropeLength);
                     truncated = true;
-
-                    Gizmos.color = arcColor;
-                    Gizmos.DrawLine(previousPoint, truncationPoint);
+                    Gizmos.color = color;
+                    Gizmos.DrawLine(prev, truncationPoint);
                     Gizmos.color = truncationColor;
                     Gizmos.DrawWireSphere(truncationPoint, 0.25f);
                     break;
                 }
             }
 
-            Gizmos.color = arcColor;
-            Gizmos.DrawLine(previousPoint, currentPoint);
+            Gizmos.color = color;
+            Gizmos.DrawLine(prev, curr);
 
-            if (currentPoint.y > highestY) { highestY = currentPoint.y; highestPoint = currentPoint; }
-            if (currentPoint.y >= startPos.y) landingPoint = currentPoint;
+            if (curr.y > highestY) { highestY = curr.y; highestPoint = curr; }
+            if (curr.y >= startPos.y) landingPoint = curr;
 
-            previousPoint = currentPoint;
+            prev = curr;
         }
 
         if (!truncated)
@@ -405,7 +591,7 @@ public class TrajectoryVisualizer : MonoBehaviour
             Gizmos.DrawWireSphere(highestPoint, 0.2f);
             Gizmos.color = Color.red;
             Gizmos.DrawWireSphere(landingPoint, 0.2f);
-            Gizmos.color = new Color(arcColor.r, arcColor.g, arcColor.b, 0.3f);
+            Gizmos.color = new Color(color.r, color.g, color.b, 0.3f);
             Gizmos.DrawLine(startPos, new Vector3(landingPoint.x, startPos.y, startPos.z));
             DrawLabels(startPos, highestPoint, landingPoint, false, Vector3.zero);
         }
@@ -418,43 +604,46 @@ public class TrajectoryVisualizer : MonoBehaviour
         Gizmos.DrawWireSphere(startPos, 0.1f);
     }
 
+    // -------------------------------------------------------------------------
+    // Arc drawing — Debug.DrawLine (Play Mode)
+    // -------------------------------------------------------------------------
+
     private void DrawArcDebug(
         Vector3 startPos, Vector2 velocity, float gravity,
-        bool hasJoint, Vector3 connectedPos, float ropeLength)
+        bool hasJoint, Vector3 connectedPos, float ropeLength,
+        Color color)
     {
-        Vector3 previousPoint = startPos;
+        Vector3 prev = startPos;
         float highestY = startPos.y;
         Vector3 highestPoint = startPos;
         Vector3 landingPoint = startPos;
         bool truncated = false;
         Vector3 truncationPoint = startPos;
-
         float dt = simulationDuration / resolution;
 
         for (int i = 1; i <= resolution; i++)
         {
             float t = i * dt;
-            Vector3 currentPoint = SampleArc(startPos, velocity, gravity, t);
+            Vector3 curr = SampleArc(startPos, velocity, gravity, t);
 
             if (truncateAtRopeLimit && hasJoint && !truncated)
             {
-                if (Vector2.Distance(currentPoint, connectedPos) > ropeLength)
+                if (Vector2.Distance(curr, connectedPos) > ropeLength)
                 {
-                    truncationPoint = FindRopeCrossing(previousPoint, currentPoint, connectedPos, ropeLength);
+                    truncationPoint = FindRopeCrossing(prev, curr, connectedPos, ropeLength);
                     truncated = true;
-
-                    Debug.DrawLine(previousPoint, truncationPoint, arcColor, lineDuration);
+                    Debug.DrawLine(prev, truncationPoint, color, lineDuration);
                     DrawDebugCross(truncationPoint, truncationColor, 0.25f);
                     break;
                 }
             }
 
-            Debug.DrawLine(previousPoint, currentPoint, arcColor, lineDuration);
+            Debug.DrawLine(prev, curr, color, lineDuration);
 
-            if (currentPoint.y > highestY) { highestY = currentPoint.y; highestPoint = currentPoint; }
-            if (currentPoint.y >= startPos.y) landingPoint = currentPoint;
+            if (curr.y > highestY) { highestY = curr.y; highestPoint = curr; }
+            if (curr.y >= startPos.y) landingPoint = curr;
 
-            previousPoint = currentPoint;
+            prev = curr;
         }
 
         if (!truncated)
@@ -464,7 +653,7 @@ public class TrajectoryVisualizer : MonoBehaviour
             Debug.DrawLine(
                 startPos,
                 new Vector3(landingPoint.x, startPos.y, startPos.z),
-                new Color(arcColor.r, arcColor.g, arcColor.b, 0.4f),
+                new Color(color.r, color.g, color.b, 0.4f),
                 lineDuration
             );
         }
@@ -480,9 +669,11 @@ public class TrajectoryVisualizer : MonoBehaviour
 
     private Vector3 SampleArc(Vector3 startPos, Vector2 velocity, float gravity, float t)
     {
-        float x = startPos.x + velocity.x * t;
-        float y = startPos.y + velocity.y * t + 0.5f * gravity * t * t;
-        return new Vector3(x, y, startPos.z);
+        return new Vector3(
+            startPos.x + velocity.x * t,
+            startPos.y + velocity.y * t + 0.5f * gravity * t * t,
+            startPos.z
+        );
     }
 
     private Vector3 FindRopeCrossing(Vector3 from, Vector3 to, Vector3 anchor, float ropeLength)
@@ -499,12 +690,11 @@ public class TrajectoryVisualizer : MonoBehaviour
 
     private void DrawDebugCircle(Vector3 center, float radius, Color color, int segments)
     {
-        float angleStep = 360f / segments;
+        float step = 360f / segments;
         Vector3 prev = center + new Vector3(radius, 0f, 0f);
-
         for (int i = 1; i <= segments; i++)
         {
-            float angle = i * angleStep * Mathf.Deg2Rad;
+            float angle = i * step * Mathf.Deg2Rad;
             Vector3 next = center + new Vector3(Mathf.Cos(angle) * radius, Mathf.Sin(angle) * radius, 0f);
             Debug.DrawLine(prev, next, color, lineDuration);
             prev = next;
@@ -523,12 +713,13 @@ public class TrajectoryVisualizer : MonoBehaviour
         return new Vector2(Mathf.Cos(rad) * speed, Mathf.Sin(rad) * speed);
     }
 
-    private void DrawLabels(Vector3 start, Vector3 apex, Vector3 landing, bool wasTruncated, Vector3 truncationPoint)
+    private void DrawLabels(
+        Vector3 start, Vector3 apex, Vector3 landing,
+        bool wasTruncated, Vector3 truncationPoint)
     {
-        UnityEditor.Handles.color = Color.white;
-
         if (!wasTruncated)
         {
+            UnityEditor.Handles.color = Color.white;
             UnityEditor.Handles.Label(apex + Vector3.up * 0.3f, $"Peak: +{apex.y - start.y:F1}u");
             UnityEditor.Handles.Label(landing + Vector3.up * 0.3f, $"Range: {Mathf.Abs(landing.x - start.x):F1}u");
         }
@@ -543,7 +734,7 @@ public class TrajectoryVisualizer : MonoBehaviour
     }
 
     // -------------------------------------------------------------------------
-    // Auto-fill context menu helpers (right-click the component in Inspector)
+    // Auto-fill context menu helpers
     // -------------------------------------------------------------------------
 
     [ContextMenu("Auto-Fill from JumpCharacterController")]
@@ -553,11 +744,11 @@ public class TrajectoryVisualizer : MonoBehaviour
         if (jump == null) { Debug.LogWarning("TrajectoryVisualizer: No JumpCharacterController found."); return; }
 
         var flags = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
-        var speedField = typeof(JumpCharacterController).GetField("originalSpeed", flags);
-        var jumpField = typeof(JumpCharacterController).GetField("originalJumpForce", flags);
+        var sf = typeof(JumpCharacterController).GetField("originalSpeed", flags);
+        var jf = typeof(JumpCharacterController).GetField("originalJumpForce", flags);
 
-        if (speedField != null) horizontalSpeed = (float)speedField.GetValue(jump);
-        if (jumpField != null) launchSpeed = (float)jumpField.GetValue(jump);
+        if (sf != null) horizontalSpeed = (float)sf.GetValue(jump);
+        if (jf != null) launchSpeed = (float)jf.GetValue(jump);
 
         characterType = CharacterType.CatJump;
         launchAngleDeg = 90f;

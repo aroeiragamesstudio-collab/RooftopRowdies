@@ -484,6 +484,7 @@ MonoBehaviour:
   resolution: 60
   alwaysDraw: 1
   arcColor: {r: 0, g: 1, b: 1, a: 1}
+  freezeArcColor: {r: 1, g: 1, b: 0, a: 0.8}
   lineDuration: 0
   showRopeLimit: 1
   ropeLimitColor: {r: 1, g: 0.5, b: 0, a: 0.8}
@@ -1054,6 +1055,7 @@ MonoBehaviour:
   resolution: 60
   alwaysDraw: 0
   arcColor: {r: 0, g: 1, b: 1, a: 1}
+  freezeArcColor: {r: 1, g: 1, b: 0, a: 0.8}
   lineDuration: 0
   showRopeLimit: 1
   ropeLimitColor: {r: 1, g: 0.5, b: 0, a: 0.8}
@@ -1202,6 +1204,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5867335715226277767, guid: 842927e28fa2a97428f026f1e2e513aa, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8323727154950466415, guid: 842927e28fa2a97428f026f1e2e513aa, type: 3}
+      propertyPath: m_Enabled
       value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
