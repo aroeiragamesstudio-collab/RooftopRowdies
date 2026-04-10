@@ -18,7 +18,8 @@ public class JumpCharacterController : MonoBehaviour
         Swinging,
         SatDown,
         HoldingSurface,
-        Absorbed
+        Absorbed,
+        Flying,
     }
 
     [Header("Atributos Base")]
@@ -31,28 +32,40 @@ public class JumpCharacterController : MonoBehaviour
     public float holdTime = 10f;
     [SerializeField] Transform bottomPos, sidePos, topPos;
     [SerializeField] LayerMask floorLayer, wallLayer, topLayer;
-    [SerializeField] float bottomSize = 1.5f;
-    [SerializeField] float sideSize = 1.5f;
-    [SerializeField] float topSize = 1.5f;
+    [SerializeField] Vector2 bottomSize = new Vector2(1.5f, 0.1f);
+    [SerializeField] Vector2 sideSize = new Vector2(0.1f, 1.5f);
+    [SerializeField] Vector2 topSize = new Vector2(1.5f, 0.1f);
 
     [Header("Informação de ser atirado")]
     public float timeToNormal = 5f;
 
+    [Header("Vôo")]
+    public float flightGravity = 0.2f;
+    public float flightTime = 3f;
+    public float flightSpeed = 2f;
+
+
     Vector2 moveInput;
     float x;
+    float dir = 1;
+    float originalGravity;
 
     InputAction moveAction;
     InputAction jumpAction;
     InputAction waitAction;
+    InputAction flightAction;
     Rigidbody2D rb;
 
     [HideInInspector]
     public bool beingShot;
 
     float timePassed;
+    public float timePassedFlying;
     bool holding;
     bool startHold;
     bool falling;
+    bool flying;
+    bool waiting;
     bool facingRight = true;
 
     [HideInInspector]
@@ -71,6 +84,9 @@ public class JumpCharacterController : MonoBehaviour
         moveAction = playerInput.currentActionMap.FindAction("Move");
         jumpAction = playerInput.currentActionMap.FindAction("Jump");
         waitAction = playerInput.currentActionMap.FindAction("Wait");
+        flightAction = playerInput.currentActionMap.FindAction("Flight");
+
+        originalGravity = rb.gravityScale;
 
         currentState = CharacterState.Idle;
     }
@@ -110,13 +126,21 @@ public class JumpCharacterController : MonoBehaviour
                 beingShot = false;
                 timePassed = 0;
             }
+            return;
         }
 
-        moveInput = moveAction.ReadValue<Vector2>();
-
-        if (jumpAction.WasPressedThisFrame() && OnGround())
+        // Verificar depois para tentar melhorar a chamada
+        if (!waiting)
         {
-            Jump();
+            moveInput = moveAction.ReadValue<Vector2>();
+
+            if (moveInput.x != 0)
+                dir = moveInput.x;
+
+            if (jumpAction.WasPressedThisFrame() && OnGround())
+            {
+                Jump();
+            }
         }
 
         // VERIFICAR SE NÃO FAZ MAIS SENTIDO SEGURAR MULTIPLAS VEZES AO INVÉS DE SÓ UMA
@@ -150,11 +174,32 @@ public class JumpCharacterController : MonoBehaviour
 
                 rb.bodyType = RigidbodyType2D.Dynamic;
             }
+            return;
         }
 
         if (startHold && OnGround())
         {
             startHold = false;
+        }
+
+        Flying();
+
+        if (flying)
+        {
+            timePassedFlying += Time.deltaTime;
+
+            if (timePassedFlying >= flightTime)
+            {
+                flying = false;
+                rb.gravityScale = originalGravity;
+            }
+        }
+
+        if(OnGround() || OnWall())
+        {
+            flying = false;
+            rb.gravityScale = originalGravity;
+            timePassedFlying = 0;
         }
 
         IsSwinging();
@@ -171,7 +216,7 @@ public class JumpCharacterController : MonoBehaviour
         switch (currentState)
         {
             case CharacterState.Idle:
-                if(holding) return;
+                if (holding) return;
                 rb.linearVelocityX = moveInput.x * originalSpeed;
                 break;
             case CharacterState.Walking:
@@ -207,6 +252,12 @@ public class JumpCharacterController : MonoBehaviour
                 break;
             case CharacterState.Absorbed:
                 break;
+            case CharacterState.Flying:
+                if(moveInput.x != 0)
+                    rb.linearVelocityX = moveInput.x * originalSpeed;
+                else
+                    rb.linearVelocityX = dir * flightSpeed;
+                break;
         }
     }
 
@@ -228,11 +279,29 @@ public class JumpCharacterController : MonoBehaviour
     {
         if (waitAction.IsPressed() && OnGround())
         {
+            rb.linearVelocity = Vector2.zero;
             rb.bodyType = RigidbodyType2D.Kinematic;
+            waiting = true;
         }
         else if (waitAction.WasReleasedThisFrame() && OnGround())
         {
             rb.bodyType = RigidbodyType2D.Dynamic;
+            waiting = false;
+        }
+    }
+
+    private void Flying()
+    {
+        if (flightAction.IsPressed() && !OnGround())
+        {
+            flying = true;
+            rb.gravityScale = flightGravity;
+        }
+
+        if (flightAction.WasReleasedThisFrame() && flying)
+        {
+            flying = false;
+            rb.gravityScale = originalGravity;
         }
     }
 
@@ -240,19 +309,19 @@ public class JumpCharacterController : MonoBehaviour
     public bool OnGround()
     {
         // Verifica se o personagem está no chão usando OverlapCircle.
-        return Physics2D.OverlapCircle(bottomPos.position, bottomSize, floorLayer);
+        return Physics2D.OverlapBox(bottomPos.position, bottomSize, 0f, floorLayer);
     }
 
     public bool OnWall()
     {
         // Verifica se o personagem está no chão usando OverlapCircle.
-        return Physics2D.OverlapCircle(sidePos.position, sideSize, wallLayer);
+        return Physics2D.OverlapBox(sidePos.position, sideSize, 0f, wallLayer);
     }
 
     public bool OnCeiling()
     {
         // Verifica se o personagem está no chão usando OverlapCircle.
-        return Physics2D.OverlapCircle(topPos.position, topSize, topLayer);
+        return Physics2D.OverlapBox(topPos.position, topSize, 0f, topLayer);
     }
     #endregion
 
@@ -263,6 +332,18 @@ public class JumpCharacterController : MonoBehaviour
         if(beingShot)
         {
             currentState = CharacterState.Shot;
+            return;
+        }
+
+        if (flying)
+        {
+            currentState = CharacterState.Flying;
+            return;
+        }
+
+        if (waiting)
+        {
+            currentState = CharacterState.SatDown;
             return;
         }
 
@@ -325,5 +406,17 @@ public class JumpCharacterController : MonoBehaviour
         {
             return false;
         }
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        Gizmos.color = Color.green;
+        Gizmos.DrawWireCube(bottomPos.position, bottomSize);
+
+        Gizmos.color = Color.blue;
+        Gizmos.DrawWireCube(sidePos.position, sideSize);
+
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireCube(topPos.position, topSize);
     }
 }

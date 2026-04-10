@@ -26,7 +26,7 @@ public class GunCharacterController : MonoBehaviour
     [Header("Detecção de Solo")]
     [SerializeField] Transform bottomPos;
     [SerializeField] LayerMask floorLayer;
-    [SerializeField] float bottomSize = 1.5f;
+    [SerializeField] Vector2 bottomSize = new Vector2(1.5f, 0.2f);
 
     // Variaveis privadas
     [HideInInspector]
@@ -125,7 +125,7 @@ public class GunCharacterController : MonoBehaviour
     public bool OnGround()
     {
         // Verifica se o personagem está no chão usando OverlapCircle.
-        return Physics2D.OverlapCircle(bottomPos.position, bottomSize, floorLayer);
+        return Physics2D.OverlapBox(bottomPos.position, bottomSize, 0f, floorLayer);
     }
 
     private void IsSwinging()
