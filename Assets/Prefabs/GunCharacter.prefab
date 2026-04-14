@@ -181,8 +181,13 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 8
   bottomSize: {x: 1.5, y: 0.2}
+  ropeAdjustCondition: 1
+  ropeAdjustSpeed: 2
+  ropeMinDistance: 1
+  ropeMaxDistance: 15
   paws: {fileID: 0}
   absorbed: 0
+  waiting: 0
 --- !u!114 &2640800705571640124
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -240,6 +245,10 @@ MonoBehaviour:
       m_Calls: []
     m_ActionId: e0e65cfe-3534-471c-a5bf-07059d26eb6d
     m_ActionName: 'GunPlayer/Wait[/Keyboard/e,/DualSenseGamepadHID/buttonEast,/XInputControllerWindows/buttonEast]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: f898335d-6beb-45b5-8f8c-475d602a1dfd
+    m_ActionName: 'JumpPlayer/Flight[/Keyboard/f,/DualSenseGamepadHID/buttonEast]'
   m_NeverAutoSwitchControlSchemes: 1
   m_DefaultControlScheme: Gamepad
   m_DefaultActionMap: GunPlayer
@@ -436,7 +445,7 @@ MonoBehaviour:
   rbPlayer: {fileID: 8725384248250218035}
   aimActionRef: {fileID: -4990979050747029019, guid: 69f3ddfd4ba990047a8694e49654f87e, type: 3}
   offset: 0
-  gunKnockback: 5
+  gunKnockback: 7
   shootForce: 10
   timeBetweenShots: 1
   absorbDistance: 2
