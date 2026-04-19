@@ -8,10 +8,12 @@ public class MenuController : MonoBehaviour
     [Header("Telas")]
     [SerializeField] GameObject mainMenu;
     [SerializeField] GameObject confirmMessage;
+    [SerializeField] GameObject optionsMenu;
     [SerializeField] GameObject lobby;
 
     [Header("Botões")]
     [SerializeField] Button startBtn;
+    [SerializeField] Button optionsBtn;
     [SerializeField] Button quitBtn;
     [SerializeField] Button confirmQuitBtn;
     [SerializeField] Button cancelBtn;
@@ -38,6 +40,7 @@ public class MenuController : MonoBehaviour
         quitBtn.onClick.AddListener(QuitBtn);
         confirmQuitBtn.onClick.AddListener(ConfirmQuit);
         cancelBtn.onClick.AddListener(Cancel);
+        optionsBtn.onClick.AddListener(OpenOptions);
     }
 
     public void GoToLobby()
@@ -50,6 +53,17 @@ public class MenuController : MonoBehaviour
     {
         lobby.SetActive(false);
         mainMenu.SetActive(false);
+    }
+
+    public void OpenOptions()
+    {
+        optionsMenu.SetActive(true);
+        //mainMenu.SetActive(false);
+    }
+
+    public void CloseOptions()
+    {
+        optionsMenu.SetActive(false);
     }
 
     public void QuitBtn()
@@ -73,8 +87,10 @@ public class MenuController : MonoBehaviour
 
     private void OnDestroy()
     {
+        startBtn.onClick.RemoveAllListeners();
         quitBtn.onClick.RemoveAllListeners();
         confirmQuitBtn.onClick.RemoveAllListeners();
         cancelBtn.onClick.RemoveAllListeners();
+        optionsBtn.onClick.RemoveAllListeners();
     }
 }
