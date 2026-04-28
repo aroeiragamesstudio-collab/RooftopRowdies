@@ -179,7 +179,7 @@ MonoBehaviour:
   bottomPos: {fileID: 8270586499843573950}
   floorLayer:
     serializedVersion: 2
-    m_Bits: 8
+    m_Bits: 136
   bottomSize: {x: 1.5, y: 0.2}
   ropeAdjustCondition: 1
   ropeAdjustSpeed: 2
