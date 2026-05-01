@@ -101,7 +101,7 @@ public class GunCharacterController : MonoBehaviour
         if (!waiting)
         {
             moveInput = moveAction.ReadValue<Vector2>();
-
+            x = moveInput.x;
             HandleRopeAdjust();
         }
 

@@ -143,6 +143,8 @@ public class JumpCharacterController : MonoBehaviour
             if (moveInput.x != 0)
                 dir = moveInput.x;
 
+            x = moveInput.x;
+
             if (jumpAction.WasPressedThisFrame() && OnGround())
             {
                 Jump();
