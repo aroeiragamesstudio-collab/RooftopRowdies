@@ -200,6 +200,7 @@ public class GunController : MonoBehaviour
         else
         {
             jumpChar.beingShot = true;
+            jumpChar.currentState = JumpCharacterController.CharacterState.Shot;
             jumpChar.GetComponent<Collider2D>().enabled=true;
             jumpChar.GetComponent<Rigidbody2D>().bodyType = RigidbodyType2D.Dynamic;
 

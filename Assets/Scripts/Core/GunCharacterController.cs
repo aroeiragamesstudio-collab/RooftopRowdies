@@ -32,9 +32,9 @@ public class GunCharacterController : MonoBehaviour
 
     [Header("Ajuste de Corda")]
     [SerializeField] RopeAdjustCondition ropeAdjustCondition = RopeAdjustCondition.OnlyWhenAllyWaiting;
-    [SerializeField] float ropeAdjustSpeed = 2f;
-    [SerializeField] float ropeMinDistance = 1f;
-    [SerializeField] float ropeMaxDistance = 15f;
+
+    [Header("Pêndulo")]
+    [SerializeField] float swingDamping = 0.8f;
 
     // Variaveis privadas
     [HideInInspector]
@@ -50,16 +50,10 @@ public class GunCharacterController : MonoBehaviour
     [HideInInspector]
     public bool waiting;
     float x;
-
-    void Awake()
-    {
-
-    }
+    float originalDamping;
 
     private void Start()
     {
-        //StartCoroutine(AssignDistanceJoint());
-
         paws = FindFirstObjectByType<JumpCharacterController>();
 
         rb = GetComponent<Rigidbody2D>();
@@ -74,26 +68,10 @@ public class GunCharacterController : MonoBehaviour
         moveAction = playerInput.currentActionMap.FindAction("Move");
         waitAction = playerInput.currentActionMap.FindAction("Wait");
 
+        originalDamping = rb.linearDamping;
+
         if (moveAction == null)
             Debug.LogError("Não foi encontrada a ação 'Move'. Verifique o Input Map");
-    }
-
-    IEnumerator AssignDistanceJoint()
-    {
-        while (distanceJoint.connectedBody == null)
-        {
-            paws = FindFirstObjectByType<JumpCharacterController>();
-
-            if (paws != null)
-            {
-                distanceJoint.connectedBody = paws.GetComponent<Rigidbody2D>();
-                Debug.Log("DistanceJoint atribuído com sucesso.");
-
-                yield break;
-            }
-
-            yield return null;
-        }
     }
 
     private void Update()
@@ -111,6 +89,7 @@ public class GunCharacterController : MonoBehaviour
 
     private void FixedUpdate()
     {
+        rb.linearDamping = originalDamping;
         switch (currentState)
         {
             case CharacterState.Idle:
@@ -125,6 +104,7 @@ public class GunCharacterController : MonoBehaviour
             case CharacterState.Shooting:
                 break;
             case CharacterState.Swinging:
+                rb.linearDamping = swingDamping;
                 HandlePendulumMotion();
 
                 // Check if the player has surpassed the other player's height while swinging
@@ -197,30 +177,17 @@ public class GunCharacterController : MonoBehaviour
     {
         if (paws.IsKinematic() && !OnGround())
         {
-            Vector2 toConnected = distanceJoint.connectedBody.position - rb.position;
+            Vector2 toConnected = paws.transform.position - (Vector3)rb.position;
             Vector2 tangent = Vector2.Perpendicular(toConnected).normalized;
-
-            if (toConnected.magnitude >= distanceJoint.distance && x == 0)
-            {
-                Debug.Log(x);
-
-                if (rb.linearVelocityY < 0) // Falling
-                {
-                    rb.AddForce(tangent * originalSpeed, ForceMode2D.Force);
-                }
-                else if (rb.linearVelocityY > 0) // Going up
-                {
-                    rb.AddForce(tangent * originalSpeed, ForceMode2D.Force);
-                    rb.AddForce(new Vector2(0, originalSpeed * 0.5f), ForceMode2D.Force);
-                }
-            }
 
             if (x != 0)
             {
                 rb.AddForce(-1 * x * tangent * originalSpeed, ForceMode2D.Force);
             }
-
-            rb.linearVelocity = new Vector2(rb.linearVelocityX, rb.linearVelocityY);
+            //if (x == 0 && rb.linearVelocity.magnitude < 0.1f)
+            //{
+            //    rb.linearVelocity = Vector2.zero;
+            //}
         }
     }
 
@@ -243,15 +210,6 @@ public class GunCharacterController : MonoBehaviour
         // We invert so W = shorter (pull up) and S = longer (let out) — change sign if you prefer the opposite
         float verticalInput = moveInput.y;
         paws.AdjustRopeDistance(verticalInput);
-    }
-
-    public void AdjustRopeDistance(float verticalInput)
-    {
-        if (distanceJoint == null) return;
-        if (Mathf.Abs(verticalInput) < 0.1f) return;
-
-        float newDistance = distanceJoint.distance - (verticalInput * ropeAdjustSpeed * Time.deltaTime);
-        distanceJoint.distance = Mathf.Clamp(newDistance, ropeMinDistance, ropeMaxDistance);
     }
 
     public bool IsKinematic()

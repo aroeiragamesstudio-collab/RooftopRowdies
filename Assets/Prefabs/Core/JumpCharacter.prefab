@@ -226,7 +226,7 @@ MonoBehaviour:
   bottomSize: {x: 1.5, y: 0.1}
   sideSize: {x: 0.1, y: 1.5}
   topSize: {x: 1.5, y: 0.1}
-  timeToNormal: 4
+  timeToNormal: 2
   flightGravity: 0.2
   flightTime: 3
   flightSpeed: 2
@@ -234,6 +234,7 @@ MonoBehaviour:
   ropeAdjustSpeed: 2
   ropeMinDistance: 1
   ropeMaxDistance: 15
+  swingDamping: 0.8
   beingShot: 0
   porky: {fileID: 0}
 --- !u!114 &4321707408902692906
@@ -293,6 +294,10 @@ MonoBehaviour:
       m_Calls: []
     m_ActionId: e0e65cfe-3534-471c-a5bf-07059d26eb6d
     m_ActionName: 'GunPlayer/Wait[/Keyboard/e,/DualSenseGamepadHID/buttonEast,/XInputControllerWindows/buttonEast]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: f898335d-6beb-45b5-8f8c-475d602a1dfd
+    m_ActionName: 'JumpPlayer/Flight[/Keyboard/f,/DualSenseGamepadHID/buttonEast]'
   m_NeverAutoSwitchControlSchemes: 1
   m_DefaultControlScheme: Gamepad
   m_DefaultActionMap: JumpPlayer

@@ -79,14 +79,12 @@ public class LocalMultiplayerManager : MonoBehaviour
 
         Rigidbody2D gunRb = gunCharacter.GetComponent<Rigidbody2D>();
         Rigidbody2D jumpRb = jumpCharacter.GetComponent<Rigidbody2D>();
-        DistanceJoint2D gunJoint = gunCharacter.GetComponent<DistanceJoint2D>();
         DistanceJoint2D jumpJoint = jumpCharacter.GetComponent<DistanceJoint2D>();
 
         if (gunCtrl != null) gunCtrl.paws = jumpCtrl;
         if (jumpCtrl != null) jumpCtrl.porky = gunCtrl;
         if (gunWeapon != null) gunWeapon.jumpChar = jumpCtrl;
 
-        if (gunJoint != null && jumpRb != null) gunJoint.connectedBody = jumpRb;
         if (jumpJoint != null && gunRb != null) jumpJoint.connectedBody = gunRb;
 
         Debug.Log("[LocalMultiplayerManager] Cross-references wired.");

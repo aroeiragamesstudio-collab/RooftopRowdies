@@ -182,9 +182,7 @@ MonoBehaviour:
     m_Bits: 136
   bottomSize: {x: 1.5, y: 0.2}
   ropeAdjustCondition: 1
-  ropeAdjustSpeed: 2
-  ropeMinDistance: 1
-  ropeMaxDistance: 15
+  swingDamping: 0.8
   paws: {fileID: 0}
   absorbed: 0
   waiting: 0

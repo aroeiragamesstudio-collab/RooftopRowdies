@@ -50,10 +50,14 @@ public class JumpCharacterController : MonoBehaviour
     [SerializeField] float ropeMinDistance = 1f;
     [SerializeField] float ropeMaxDistance = 15f;
 
+    [Header("Pêndulo")]
+    [SerializeField] float swingDamping = 0.8f;
+
     Vector2 moveInput;
     float x;
     float dir = 1;
     float originalGravity;
+    float originalDamping;
 
     InputAction moveAction;
     InputAction jumpAction;
@@ -94,30 +98,9 @@ public class JumpCharacterController : MonoBehaviour
 
         originalGravity = rb.gravityScale;
 
+        originalDamping = rb.linearDamping;
+
         currentState = CharacterState.Idle;
-    }
-
-    private void Start()
-    {
-        StartCoroutine(AssignDistanceJoint());
-    }
-
-    IEnumerator AssignDistanceJoint()
-    {
-        while (distanceJoint.connectedBody == null)
-        {
-            porky = FindFirstObjectByType<GunCharacterController>();
-
-            if (porky != null)
-            {
-                distanceJoint.connectedBody = porky.GetComponent<Rigidbody2D>();
-                Debug.Log("DistanceJoint atribuído com sucesso.");
-
-                yield break;
-            }
-
-            yield return null;
-        }
     }
 
     // Criar metodos para limpar o Update
@@ -224,6 +207,7 @@ public class JumpCharacterController : MonoBehaviour
 
     private void FixedUpdate()
     {
+        rb.linearDamping = originalDamping;
         switch (currentState)
         {
             case CharacterState.Idle:
@@ -246,6 +230,7 @@ public class JumpCharacterController : MonoBehaviour
                 rb.linearVelocity = new Vector2(rb.linearVelocityX, rb.linearVelocityY);
                 break;
             case CharacterState.Swinging:
+                rb.linearDamping = swingDamping;
                 HandlePendulumMotion();
 
                 // Check if the player has surpassed the other player's height while swinging
@@ -389,30 +374,17 @@ public class JumpCharacterController : MonoBehaviour
     {
         if (porky.IsKinematic() && !OnGround())
         {
-            Vector2 toConnected = distanceJoint.connectedBody.position - rb.position;
+            Vector2 toConnected = porky.transform.position - (Vector3)rb.position;
             Vector2 tangent = Vector2.Perpendicular(toConnected).normalized;
-
-            if (toConnected.magnitude >= distanceJoint.distance && x == 0)
-            {
-                Debug.Log(x);
-
-                if (rb.linearVelocityY < 0) // Falling
-                {
-                    rb.AddForce(tangent * originalSpeed, ForceMode2D.Force);
-                }
-                else if (rb.linearVelocityY > 0) // Going up
-                {
-                    rb.AddForce(tangent * originalSpeed, ForceMode2D.Force);
-                    rb.AddForce(new Vector2(0, originalSpeed * 0.5f), ForceMode2D.Force);
-                }
-            }
 
             if (x != 0)
             {
                 rb.AddForce(-1 * x * tangent * originalSpeed, ForceMode2D.Force);
             }
-
-            rb.linearVelocity = new Vector2(rb.linearVelocityX, rb.linearVelocityY);
+            if (x == 0 && rb.linearVelocity.magnitude < 0.1f)
+            {
+                rb.linearVelocity = Vector2.zero;
+            }
         }
     }
 
