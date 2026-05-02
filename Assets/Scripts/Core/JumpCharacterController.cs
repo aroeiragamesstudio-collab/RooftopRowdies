@@ -1,7 +1,6 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using static UnityEditor.ShaderData;
 
 /// <summary>
 /// Script principal do personagem gato/que pula, sendo aqui a maioria das mudanças dele

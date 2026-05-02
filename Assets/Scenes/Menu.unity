@@ -7112,7 +7112,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e13c90dbc078f754f9f48af537c61485, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LobbyManager
-  gameplaySceneName: TesteMecanicas
+  gameplaySceneName: LevelDesign
   player1StatusText: {fileID: 1417669404}
   player1DeviceText: {fileID: 366458336}
   player1CharacterText: {fileID: 1404289678}

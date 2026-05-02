@@ -444,7 +444,7 @@ MonoBehaviour:
   aimActionRef: {fileID: -4990979050747029019, guid: 69f3ddfd4ba990047a8694e49654f87e, type: 3}
   offset: 0
   gunKnockback: 7
-  shootForce: 10
+  shootForce: 15
   timeBetweenShots: 1
   absorbDistance: 2
   aimTolerance: 0.8
