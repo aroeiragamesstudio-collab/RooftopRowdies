@@ -5960,7 +5960,7 @@ MonoBehaviour:
   aimActionRef: {fileID: -4990979050747029019, guid: 69f3ddfd4ba990047a8694e49654f87e, type: 3}
   offset: 0
   gunKnockback: 7
-  shootForce: 10
+  shootForce: 13
   timeBetweenShots: 1
   absorbDistance: 2
   aimTolerance: 0.8
@@ -6523,7 +6523,7 @@ MonoBehaviour:
   bottomSize: {x: 1.5, y: 0.1}
   sideSize: {x: 0.1, y: 1.5}
   topSize: {x: 1.5, y: 0.1}
-  timeToNormal: 4
+  timeToNormal: 1.5
   flightGravity: 0.2
   flightTime: 3
   flightSpeed: 2

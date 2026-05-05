@@ -26,7 +26,7 @@ public class BreakablePlatform : MonoBehaviour
     public void FixedPlatform()
     {
         col.enabled = true;
-
+        breaking = false;
         once = false;
     }
 
