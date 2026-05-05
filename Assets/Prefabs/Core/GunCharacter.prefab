@@ -181,7 +181,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 136
   bottomSize: {x: 1.5, y: 0.2}
-  ropeAdjustCondition: 1
+  ropeAdjustCondition: 2
   swingDamping: 0.8
   paws: {fileID: 0}
   absorbed: 0

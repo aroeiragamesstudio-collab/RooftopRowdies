@@ -5141,7 +5141,7 @@ Transform:
   m_GameObject: {fileID: 8368583335895089770}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 51.5, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -5960,7 +5960,7 @@ MonoBehaviour:
   aimActionRef: {fileID: -4990979050747029019, guid: 69f3ddfd4ba990047a8694e49654f87e, type: 3}
   offset: 0
   gunKnockback: 7
-  shootForce: 13
+  shootForce: 10
   timeBetweenShots: 1
   absorbDistance: 2
   aimTolerance: 0.8
@@ -6053,7 +6053,7 @@ Transform:
   m_GameObject: {fileID: 989660462411588830}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 52, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -6353,7 +6353,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 136
   bottomSize: {x: 1.5, y: 0.2}
-  ropeAdjustCondition: 2
+  ropeAdjustCondition: 1
   swingDamping: 0.8
   paws: {fileID: 0}
   absorbed: 0
@@ -6523,11 +6523,11 @@ MonoBehaviour:
   bottomSize: {x: 1.5, y: 0.1}
   sideSize: {x: 0.1, y: 1.5}
   topSize: {x: 1.5, y: 0.1}
-  timeToNormal: 1.5
+  timeToNormal: 2
   flightGravity: 0.2
   flightTime: 3
   flightSpeed: 2
-  ropeAdjustCondition: 2
+  ropeAdjustCondition: 1
   ropeAdjustSpeed: 2
   ropeMinDistance: 1
   ropeMaxDistance: 15

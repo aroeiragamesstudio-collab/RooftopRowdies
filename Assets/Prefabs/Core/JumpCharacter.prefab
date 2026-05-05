@@ -230,7 +230,7 @@ MonoBehaviour:
   flightGravity: 0.2
   flightTime: 3
   flightSpeed: 2
-  ropeAdjustCondition: 1
+  ropeAdjustCondition: 2
   ropeAdjustSpeed: 2
   ropeMinDistance: 1
   ropeMaxDistance: 15

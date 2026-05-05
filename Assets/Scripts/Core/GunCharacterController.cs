@@ -79,10 +79,10 @@ public class GunCharacterController : MonoBehaviour
         {
             moveInput = moveAction.ReadValue<Vector2>();
             x = moveInput.x;
-            HandleRopeAdjust();
         }
 
         Wait();
+        HandleRopeAdjust();
         IsSwinging();
     }
 
@@ -198,6 +198,7 @@ public class GunCharacterController : MonoBehaviour
         {
             RopeAdjustCondition.Always => true,
             RopeAdjustCondition.OnlyWhenAllyWaiting => paws.currentState == JumpCharacterController.CharacterState.SatDown,
+            RopeAdjustCondition.OnlyWhenWaiting => currentState == CharacterState.SatDown,
             RopeAdjustCondition.OnlyWhenSwinging => currentState == CharacterState.Swinging,
             RopeAdjustCondition.Never => false,
             _ => false

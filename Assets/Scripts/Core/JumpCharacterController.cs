@@ -132,8 +132,9 @@ public class JumpCharacterController : MonoBehaviour
                 Jump();
             }
 
-            HandleRopeAdjust();
         }
+
+        HandleRopeAdjust();
 
         // VERIFICAR SE NÃO FAZ MAIS SENTIDO SEGURAR MULTIPLAS VEZES AO INVÉS DE SÓ UMA
         if (!startHold && jumpAction.IsPressed() && !OnGround() && (OnCeiling() || OnWall()))
@@ -395,6 +396,7 @@ public class JumpCharacterController : MonoBehaviour
         {
             RopeAdjustCondition.Always => true,
             RopeAdjustCondition.OnlyWhenAllyWaiting => porky.currentState == GunCharacterController.CharacterState.SatDown,
+            RopeAdjustCondition.OnlyWhenWaiting => currentState == CharacterState.SatDown,
             RopeAdjustCondition.OnlyWhenSwinging => currentState == CharacterState.Swinging,
             RopeAdjustCondition.Never => false,
             _ => false
