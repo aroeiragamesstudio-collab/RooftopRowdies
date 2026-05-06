@@ -174,5 +174,5 @@ MonoBehaviour:
   sprite: {fileID: 7918566995113632222}
   col: {fileID: 6131371476251904847}
   rebuildTime: 1
-  breakTime: 6
+  breakTime: 10
   anim: {fileID: 0}

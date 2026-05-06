@@ -226,7 +226,7 @@ MonoBehaviour:
   bottomSize: {x: 1.5, y: 0.1}
   sideSize: {x: 0.1, y: 1.5}
   topSize: {x: 1.5, y: 0.1}
-  timeToNormal: 2
+  timeToNormal: 0.5
   flightGravity: 0.2
   flightTime: 3
   flightSpeed: 2
