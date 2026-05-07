@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using Unity.VisualScripting;
 using UnityEngine;
@@ -43,13 +44,14 @@ public class GunCharacterController : MonoBehaviour
     InputAction moveAction;
     InputAction waitAction;
     DistanceJoint2D distanceJoint;
-    bool falling;
+    bool falling; 
+    bool tautPenaltyActive;
     [HideInInspector]
     public bool absorbed;
     [HideInInspector]
     public bool waiting;
-    float x;
     float originalDamping;
+    float originalGravity;
 
     private void Start()
     {
@@ -68,6 +70,7 @@ public class GunCharacterController : MonoBehaviour
         waitAction = playerInput.currentActionMap.FindAction("Wait");
 
         originalDamping = rb.linearDamping;
+        originalGravity = rb.gravityScale;
 
         if (moveAction == null)
             Debug.LogError("Não foi encontrada a ação 'Move'. Verifique o Input Map");
@@ -75,10 +78,10 @@ public class GunCharacterController : MonoBehaviour
 
     private void Update()
     {
-        if (!waiting)
+        moveInput = moveAction.ReadValue<Vector2>();
+        if (waiting)
         {
-            moveInput = moveAction.ReadValue<Vector2>();
-            x = moveInput.x;
+            moveInput.x = 0;
         }
 
         Wait();
@@ -179,15 +182,23 @@ public class GunCharacterController : MonoBehaviour
             Vector2 toConnected = paws.transform.position - (Vector3)rb.position;
             Vector2 tangent = Vector2.Perpendicular(toConnected).normalized;
 
-            if (x != 0)
+            if (moveInput.x != 0)
             {
-                rb.AddForce(-1 * x * tangent * originalSpeed, ForceMode2D.Force);
+                rb.AddForce(-1 * moveInput.x * originalSpeed * tangent, ForceMode2D.Force);
             }
             //if (x == 0 && rb.linearVelocity.magnitude < 0.1f)
             //{
             //    rb.linearVelocity = Vector2.zero;
             //}
         }
+    }
+
+    public void SetTautPenalty(bool active, float multiplier)
+    {
+        tautPenaltyActive = active;
+        rb.gravityScale = active
+            ? originalGravity * multiplier
+            : originalGravity;
     }
 
     private void HandleRopeAdjust()
