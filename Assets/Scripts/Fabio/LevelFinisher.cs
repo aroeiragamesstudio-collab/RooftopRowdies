@@ -35,7 +35,7 @@ public class LevelFinisher : MonoBehaviour
     private void Start()
     {
         if (levelCompleteUI == null)
-            levelCompleteUI = FindObjectOfType<LevelCompleteUI>();
+            levelCompleteUI = FindFirstObjectByType<LevelCompleteUI>();
 
         CreateBlackOverlay();
     }
@@ -85,7 +85,7 @@ public class LevelFinisher : MonoBehaviour
             if (rb != null)
             {
                 rb.linearVelocity = Vector2.zero;
-                rb.isKinematic = true;
+                rb.bodyType = RigidbodyType2D.Kinematic;
             }
         }
     }
@@ -117,6 +117,7 @@ public class LevelFinisher : MonoBehaviour
 
         if (!string.IsNullOrEmpty(nextSceneName))
         {
+            MenuController.instance.BackToMenu();
             SceneManager.LoadScene(nextSceneName);
         }
         else
@@ -131,7 +132,7 @@ public class LevelFinisher : MonoBehaviour
 
     private void CreateBlackOverlay()
     {
-        Canvas canvas = FindObjectOfType<Canvas>();
+        Canvas canvas = FindFirstObjectByType<Canvas>();
         if (canvas == null)
         {
             GameObject cgo = new GameObject("Canvas_BlackFade");

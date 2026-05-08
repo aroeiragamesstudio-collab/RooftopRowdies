@@ -1,6 +1,23 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
+/// <summary>
+/// MenuController da cena de menu. AGORA integrado com UIPanelStack:
+/// - Telas de UI são empilhadas em vez de ligadas/desligadas via SetActive direto.
+/// - Isso faz com que CloseOptions() funcione tanto no menu principal quanto no
+///   menu de pausa do gameplay, voltando para o painel correto em cada contexto.
+///
+/// Mudanças principais em relação à versão anterior:
+///   1. Start() agora popula a pilha com o MainMenu inicialmente (push em vez de SetActive).
+///   2. OpenOptions/CloseOptions usam Push/Pop.
+///   3. GoToLobby/GoToGame usam Push/Clear, dependendo do caso.
+///   4. BackToMenu reseta a pilha pra um estado limpo.
+///
+/// Importante: o painel de Options precisa ter um campo "firstSelectedInOptions"
+/// preenchido (a primeira tab do menu de configurações, por exemplo) para que a
+/// navegação por gamepad/teclado funcione direito quando ele abre.
+/// </summary>
 public class MenuController : MonoBehaviour
 {
     public static MenuController instance;
@@ -11,6 +28,14 @@ public class MenuController : MonoBehaviour
     [SerializeField] GameObject optionsMenu;
     [SerializeField] GameObject lobby;
 
+    [Header("Primeiros itens de cada tela (para navegação por keyboard/gamepad)")]
+    [Tooltip("Primeiro botão do menu principal (geralmente o Start).")]
+    [SerializeField] GameObject firstSelectedInMainMenu;
+    [Tooltip("Primeiro botão da tela de confirmação de saída (geralmente Cancel, por segurança).")]
+    [SerializeField] GameObject firstSelectedInConfirm;
+    [Tooltip("Primeiro item das opções (geralmente a primeira tab).")]
+    [SerializeField] GameObject firstSelectedInOptions;
+
     [Header("Botões")]
     [SerializeField] Button startBtn;
     [SerializeField] Button optionsBtn;
@@ -20,7 +45,7 @@ public class MenuController : MonoBehaviour
 
     private void Awake()
     {
-        if(instance != null && instance != this)
+        if (instance != null && instance != this)
         {
             Destroy(gameObject);
             return;
@@ -30,12 +55,20 @@ public class MenuController : MonoBehaviour
         DontDestroyOnLoad(this);
     }
 
-
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        confirmMessage.SetActive(false);
-        lobby.SetActive(false);
+        // Estado inicial: todos desativados, depois empilhamos o main menu
+        // (a pilha vai cuidar de ativar e selecionar).
+        if (confirmMessage != null) confirmMessage.SetActive(false);
+        if (lobby != null) lobby.SetActive(false);
+        if (optionsMenu != null) optionsMenu.SetActive(false);
+        if (mainMenu != null) mainMenu.SetActive(false);
+
+        // Pilha começa limpa e empurra o main menu como base.
+        UIPanelStack.Clear();
+        if (mainMenu != null)
+            UIPanelStack.Push(mainMenu, firstSelectedInMainMenu);
+
         startBtn.onClick.AddListener(GoToLobby);
         quitBtn.onClick.AddListener(QuitBtn);
         confirmQuitBtn.onClick.AddListener(ConfirmQuit);
@@ -45,30 +78,57 @@ public class MenuController : MonoBehaviour
 
     public void GoToLobby()
     {
-        lobby.SetActive(true);
-        mainMenu.SetActive(false);
+        // O lobby substitui o main menu — não é uma sobreposição. Limpa a pilha
+        // e empilha o lobby como nova base. (LobbyManager faz seu próprio polling
+        // de input, então o firstSelected pode ser null.)
+        UIPanelStack.Clear();
+        if (lobby != null)
+            UIPanelStack.Push(lobby, null);
     }
 
     public void GoToGame()
     {
-        lobby.SetActive(false);
-        mainMenu.SetActive(false);
+        // Indo pra cena de gameplay — limpa toda a UI do menu para que ela
+        // não fique desenhada por cima da gameplay.
+        UIPanelStack.Clear();
+    }
+
+    public void BackToMenu()
+    {
+        // Voltando do gameplay para o menu — reseta tudo e empilha o main menu novamente.
+        UIPanelStack.Clear();
+        if (mainMenu != null)
+            UIPanelStack.Push(mainMenu, firstSelectedInMainMenu);
     }
 
     public void OpenOptions()
     {
-        optionsMenu.SetActive(true);
-        //mainMenu.SetActive(false);
+        if (optionsMenu == null)
+        {
+            Debug.LogWarning("[MenuController] optionsMenu não está atribuído.");
+            return;
+        }
+        // Push: o painel anterior (pause OU main menu) é guardado e desativado;
+        // options ativa em cima e foca a primeira tab.
+        UIPanelStack.Push(optionsMenu, firstSelectedInOptions);
     }
 
     public void CloseOptions()
     {
-        optionsMenu.SetActive(false);
+        // Pop: options desativa e o painel anterior reativa, com a seleção que
+        // estava nele (geralmente o botão "Options" que o usuário clicou).
+        UIPanelStack.Pop();
     }
 
     public void QuitBtn()
     {
-        confirmMessage.SetActive(true);
+        if (confirmMessage == null)
+        {
+            Debug.LogWarning("[MenuController] confirmMessage não está atribuído.");
+            return;
+        }
+        // Confirm é uma sobreposição: empilhe.
+        UIPanelStack.Push(confirmMessage, firstSelectedInConfirm);
     }
 
     public void ConfirmQuit()
@@ -82,15 +142,16 @@ public class MenuController : MonoBehaviour
 
     public void Cancel()
     {
-        confirmMessage.SetActive(false);
+        // Cancela a confirmação — pop volta ao main menu.
+        UIPanelStack.Pop();
     }
 
     private void OnDestroy()
     {
-        startBtn.onClick.RemoveAllListeners();
-        quitBtn.onClick.RemoveAllListeners();
-        confirmQuitBtn.onClick.RemoveAllListeners();
-        cancelBtn.onClick.RemoveAllListeners();
-        optionsBtn.onClick.RemoveAllListeners();
+        if (startBtn != null) startBtn.onClick.RemoveAllListeners();
+        if (quitBtn != null) quitBtn.onClick.RemoveAllListeners();
+        if (confirmQuitBtn != null) confirmQuitBtn.onClick.RemoveAllListeners();
+        if (cancelBtn != null) cancelBtn.onClick.RemoveAllListeners();
+        if (optionsBtn != null) optionsBtn.onClick.RemoveAllListeners();
     }
 }
