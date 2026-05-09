@@ -75,8 +75,24 @@ public class PauseManager : MonoBehaviour
     /// possamos desinscrever corretamente em OnDestroy. Sem isso, cada recarregamento
     /// da cena vazaria callbacks no asset compartilhado.
     /// </summary>
-    private readonly Dictionary<PlayerInput, System.Action<InputAction.CallbackContext>>
-        _pauseCallbacks = new Dictionary<PlayerInput, System.Action<InputAction.CallbackContext>>();
+    /// <summary>
+    /// Cada PlayerInput pode ter MÚLTIPLAS actions "Pause" (uma em cada map onde
+    /// existe — gameplay map e UI map). Subscrevemos em TODAS para que, independente
+    /// de qual map esteja ativo no momento da pressão, nossa callback seja chamada.
+    /// O dicionário guarda a lista de (action, callback) para conseguirmos desinscrever.
+    /// </summary>
+    private readonly Dictionary<PlayerInput, List<(InputAction action, System.Action<InputAction.CallbackContext> callback)>>
+        _pauseCallbacks = new Dictionary<PlayerInput, List<(InputAction, System.Action<InputAction.CallbackContext>)>>();
+
+    /// <summary>
+    /// Pedidos pendentes de pausa/resume. Os callbacks da action NÃO mudam o estado
+    /// imediatamente — eles só registram aqui qual jogador pediu. O Update consome
+    /// na frame seguinte. Isso evita o bug do Unity Input System onde alterar o
+    /// enable de um action map de dentro do callback do `performed` deixa as
+    /// callbacks órfãs (Unity Issue #538).
+    /// </summary>
+    private PlayerInput _pendingPauseRequest;
+    private bool _pendingResumeRequest;
 
     /// <summary>Guardado para restaurar Time.timeScale ao despausar (defensivo: evita assumir 1f).</summary>
     private float _previousTimeScale = 1f;
@@ -211,35 +227,54 @@ public class PauseManager : MonoBehaviour
     {
         foreach (PlayerInput pi in _allPlayerInputs)
         {
-            // Procuramos a action "Pause" pelo NOME, em qualquer map. O Input System
-            // resolve a action de acordo com o map atualmente habilitado, então a
-            // mesma referência funciona quando o jogador está em gameplay E quando
-            // está no map de UI (desde que o nome da action exista nos dois).
-            InputAction pauseAction = pi.actions != null ? pi.actions.FindAction(pauseActionName) : null;
-            if (pauseAction == null)
+            if (pi == null || pi.actions == null) continue;
+
+            // IMPORTANTE: subscrevemos na action "Pause" de CADA map onde ela existe,
+            // não só em uma. Razão: cada map tem sua PRÓPRIA InputAction com aquele nome
+            // (instâncias diferentes!). Quando o map de gameplay está ativo, a action
+            // de gameplay dispara performed; quando o map UI está ativo, é a do map UI
+            // que dispara. Se a gente subscreve só em uma, perde os eventos da outra.
+            //
+            // Sem isso, o bug clássico aparece: pause funciona, mas qualquer toggle
+            // depois (ou interações cruzadas com UI) deixam de chamar nosso callback.
+            List<(InputAction, System.Action<InputAction.CallbackContext>)> subs =
+                new List<(InputAction, System.Action<InputAction.CallbackContext>)>();
+
+            int found = 0;
+            foreach (InputActionMap map in pi.actions.actionMaps)
+            {
+                InputAction pauseAction = map.FindAction(pauseActionName);
+                if (pauseAction == null) continue;
+
+                PlayerInput owner = pi;
+                System.Action<InputAction.CallbackContext> callback = ctx => OnPauseActionPerformed(owner);
+
+                pauseAction.performed += callback;
+                subs.Add((pauseAction, callback));
+                found++;
+            }
+
+            if (found == 0)
             {
                 Debug.LogWarning($"[PauseManager] PlayerInput em '{pi.gameObject.name}' não tem " +
-                                 $"a action '{pauseActionName}'. Esse jogador não conseguirá pausar.");
+                                 $"a action '{pauseActionName}' em nenhum map. Esse jogador não conseguirá pausar.");
                 continue;
             }
 
-            // Captura o PlayerInput específico no closure — assim o callback sabe
-            // QUEM pausou. Guardamos o delegate para conseguirmos remover depois.
-            PlayerInput owner = pi;
-            System.Action<InputAction.CallbackContext> callback = ctx => OnPauseActionPerformed(owner);
-
-            pauseAction.performed += callback;
-            _pauseCallbacks[pi] = callback;
+            _pauseCallbacks[pi] = subs;
         }
     }
 
     private void UnsubscribeFromPauseActions()
     {
-        foreach (KeyValuePair<PlayerInput, System.Action<InputAction.CallbackContext>> entry in _pauseCallbacks)
+        foreach (var entry in _pauseCallbacks)
         {
-            if (entry.Key == null || entry.Key.actions == null) continue;
-            InputAction action = entry.Key.actions.FindAction(pauseActionName);
-            if (action != null) action.performed -= entry.Value;
+            if (entry.Key == null) continue;
+            foreach (var pair in entry.Value)
+            {
+                if (pair.action != null)
+                    pair.action.performed -= pair.callback;
+            }
         }
         _pauseCallbacks.Clear();
     }
@@ -250,25 +285,64 @@ public class PauseManager : MonoBehaviour
 
     private void OnPauseActionPerformed(PlayerInput requester)
     {
+        // Só registramos a intenção. A mudança real (incluindo SwitchCurrentActionMap)
+        // acontece em Update, na PRÓXIMA frame. Por quê?
+        //
+        // Há um bug conhecido do Unity Input System (Issue #538) onde desabilitar uma
+        // action enquanto seu callback está executando deixa o callback órfão — depois
+        // que a action é reabilitada, o callback nunca mais é chamado. Como nosso
+        // Pause()/Resume() chamam SwitchCurrentActionMap (que desabilita a action atual
+        // e habilita a do novo map), executar isso DENTRO do callback do `performed`
+        // produz exatamente esse cenário.
+        //
+        // Dois sintomas que isso causa, vistos no nosso jogo:
+        //   1. "Pause funciona, mas no segundo Pause não responde mais" — clássico.
+        //   2. Comportamento inconsistente entre devices, porque a ordem das callbacks
+        //      é dependente de qual action disparou.
+        //
+        // Solução: enfileirar a transição. Update consome no próximo frame, fora do
+        // contexto de callback do Input System.
+
         if (!IsPaused)
         {
-            Pause(requester);
+            _pendingPauseRequest = requester;
             return;
         }
 
-        // Está pausado e quem apertou não é o dono → ignora (anti "menu wars").
+        // Está pausado e quem apertou não é o dono → ignora.
         if (requester != PauseOwner) return;
 
-        // Se há algum painel EMPILHADO em cima do painel de pausa (ex: Options aberto),
-        // tratar Pause como "voltar/cancel" — fecha esse painel mas mantém o pause.
-        // Só fecha o pause em si quando o painel de pausa é o topo da pilha.
+        // Se há painel empilhado em cima do pause (ex: Options), Pause = back.
+        // Pop não mexe em maps, então pode ser chamado direto sem deferir.
         if (UIPanelStack.Top != null && UIPanelStack.Top != pausePanel)
         {
             UIPanelStack.Pop();
             return;
         }
 
-        Resume();
+        _pendingResumeRequest = true;
+    }
+
+    /// <summary>
+    /// Consome pedidos pendentes de pausa/resume um frame depois do callback do Input.
+    /// Isso é o que evita o "callback órfão" descrito em OnPauseActionPerformed.
+    /// </summary>
+    private void Update()
+    {
+        if (_pendingPauseRequest != null)
+        {
+            PlayerInput requester = _pendingPauseRequest;
+            _pendingPauseRequest = null;
+            // Re-checa o estado atual: pode ter mudado entre o callback e este frame
+            // (raro, mas possível com múltiplos jogadores apertando simultaneamente).
+            if (!IsPaused) Pause(requester);
+        }
+
+        if (_pendingResumeRequest)
+        {
+            _pendingResumeRequest = false;
+            if (IsPaused) Resume();
+        }
     }
 
     /// <summary>
@@ -303,13 +377,11 @@ public class PauseManager : MonoBehaviour
         }
 
         // 3. Para CADA jogador: troca o map para UI no dono, desabilita os outros.
-        //    IMPORTANTE: assina o uiInputModule ao PlayerInput do dono ANTES de trocar
-        //    o map. Esse é o passo que faz o EventSystem ler input desse jogador.
-        //    Sem isso, o map UI fica habilitado mas o módulo da EventSystem está
-        //    apontando pra outras actions (ou pra cópias sem device pareado), e o
-        //    menu não responde a nada. Doc oficial:
-        //    "when the PlayerInput configures the Actions for a specific player, it
-        //     assigns the same Action configuration to the InputSystemUIInputModule"
+        //    Configura o EventSystem para LER do PlayerInput do dono. Detalhe:
+        //    AssignUIModuleTo internamente já habilita o map UI do owner antes de
+        //    setar as referências, então a ordem aqui (Assign primeiro, Switch depois)
+        //    funciona — a Switch só confirma que UI é o map "current" do PlayerInput
+        //    e desabilita o map de gameplay anterior.
         AssignUIModuleTo(owner);
 
         foreach (PlayerInput pi in _allPlayerInputs)
@@ -375,29 +447,128 @@ public class PauseManager : MonoBehaviour
         Debug.Log("[PauseManager] Despausado.");
     }
 
+    // ─────────────────────────────────────────────
+    // Wiring direto do InputSystemUIInputModule
+    //
+    // Por que NÃO usamos owner.uiInputModule = uiInputModule?
+    //
+    // Esse setter pede pro PlayerInput "auto-sincronizar" Submit/Cancel/Navigate/etc
+    // do asset dele com o módulo. Mas o setter foi desenhado pra ser chamado UMA vez,
+    // no início. Reatribuir/limpar várias vezes (cada pause/resume) tem dois problemas:
+    //
+    //   1. A sincronização lê do asset — mas se a action de UI estiver desabilitada
+    //      (porque o map dela ainda não foi habilitado quando atribuímos), o módulo
+    //      acaba com referências que apontam para actions inativas.
+    //   2. Há bugs registrados na Unity sobre NullReferenceException ao alterar
+    //      essa propriedade em runtime (Issue 1293556).
+    //
+    // A alternativa estável: pegar as InputAction específicas do map "UI" do JOGADOR
+    // que pausou (cópia privada, com os devices pareados dele) e enfiar diretamente
+    // nos slots de InputActionReference do módulo. Isso pula o PlayerInput inteiro
+    // e força o módulo a ler exatamente das actions que a gente acabou de habilitar.
+    // ─────────────────────────────────────────────
+
     /// <summary>
-    /// Atribui o uiInputModule da EventSystem ao PlayerInput do owner. Quando isso é
-    /// feito, o PlayerInput sincroniza suas action references com o módulo — então
-    /// o módulo passa a ler Navigate/Submit/Cancel da MESMA cópia privada de actions
-    /// que esse jogador está usando, com os MESMOS devices pareados.
+    /// Estado do módulo antes da pausa, pra restaurarmos certinho no resume.
+    /// </summary>
+    private struct UIModuleState
+    {
+        public InputActionReference move;
+        public InputActionReference submit;
+        public InputActionReference cancel;
+        public InputActionReference point;
+        public InputActionReference leftClick;
+        public InputActionReference rightClick;
+        public InputActionReference middleClick;
+        public InputActionReference scrollWheel;
+        public bool valid;
+    }
+    private UIModuleState _previousModuleState;
+
+    /// <summary>
+    /// Aponta os slots do InputSystemUIInputModule para as InputActions específicas
+    /// do PlayerInput "owner", no map de UI dele. Como o PlayerInput dá uma cópia
+    /// privada das actions com os devices pareados a esse jogador, o módulo passa
+    /// a ler input EXCLUSIVAMENTE desse jogador.
     /// </summary>
     private void AssignUIModuleTo(PlayerInput owner)
     {
-        if (uiInputModule == null || owner == null) return;
-        owner.uiInputModule = uiInputModule;
+        if (uiInputModule == null || owner == null || owner.actions == null) return;
+
+        InputActionMap uiMap = owner.actions.FindActionMap(uiActionMapName);
+        if (uiMap == null)
+        {
+            Debug.LogWarning($"[PauseManager] '{owner.gameObject.name}' não tem map '{uiActionMapName}'. " +
+                             "Não consigo configurar o EventSystem.");
+            return;
+        }
+
+        // Salva o que estava lá antes, pra restaurar no resume.
+        _previousModuleState = new UIModuleState
+        {
+            move = uiInputModule.move,
+            submit = uiInputModule.submit,
+            cancel = uiInputModule.cancel,
+            point = uiInputModule.point,
+            leftClick = uiInputModule.leftClick,
+            rightClick = uiInputModule.rightClick,
+            middleClick = uiInputModule.middleClick,
+            scrollWheel = uiInputModule.scrollWheel,
+            valid = true
+        };
+
+        // Habilita o map de UI ANTES de plugar as referências — actions desabilitadas
+        // não disparam eventos pro módulo, mesmo que o módulo tenha referência delas.
+        uiMap.Enable();
+
+        // Plugin direto. Cada slot do módulo aceita uma InputActionReference que pode
+        // ser criada com InputActionReference.Create(InputAction).
+        uiInputModule.move = ToRef(uiMap.FindAction("Navigate"));
+        uiInputModule.submit = ToRef(uiMap.FindAction("Submit"));
+        uiInputModule.cancel = ToRef(uiMap.FindAction("Cancel"));
+        uiInputModule.point = ToRef(uiMap.FindAction("Point"));      // pode ser null se não existir
+        uiInputModule.leftClick = ToRef(uiMap.FindAction("Click"));      // ou "LeftClick" — adapte ao seu asset
+        uiInputModule.scrollWheel = ToRef(uiMap.FindAction("ScrollWheel"));
+        // rightClick e middleClick deixados como estavam — geralmente não usados em menu de gamepad.
+
+        Debug.Log($"[PauseManager] UI module agora lendo de '{owner.gameObject.name}' " +
+                  $"(Submit existe? {uiMap.FindAction("Submit") != null}, " +
+                  $"Cancel existe? {uiMap.FindAction("Cancel") != null}, " +
+                  $"Navigate existe? {uiMap.FindAction("Navigate") != null}).");
     }
 
     /// <summary>
-    /// Tira a referência do PlayerInput. Sem isso, mesmo após despausar o EventSystem
-    /// ainda receberia navegação do dono enquanto ele joga.
+    /// Restaura o estado anterior do módulo e desabilita o map de UI do owner.
     /// </summary>
     private void ClearUIModuleFrom(PlayerInput owner)
     {
-        if (owner == null) return;
-        // Só limpa se ainda for esse jogador que possui — protege contra race conditions
-        // (ex: se outro sistema já trocou o owner do módulo por algum motivo).
-        if (owner.uiInputModule == uiInputModule)
-            owner.uiInputModule = null;
+        if (uiInputModule == null) return;
+
+        // Restaura referências antigas (geralmente vão estar vazias se ninguém
+        // configurou o módulo no inspector — o que está OK).
+        if (_previousModuleState.valid)
+        {
+            uiInputModule.move = _previousModuleState.move;
+            uiInputModule.submit = _previousModuleState.submit;
+            uiInputModule.cancel = _previousModuleState.cancel;
+            uiInputModule.point = _previousModuleState.point;
+            uiInputModule.leftClick = _previousModuleState.leftClick;
+            uiInputModule.rightClick = _previousModuleState.rightClick;
+            uiInputModule.middleClick = _previousModuleState.middleClick;
+            uiInputModule.scrollWheel = _previousModuleState.scrollWheel;
+            _previousModuleState = default;
+        }
+
+        // O map de UI será desabilitado naturalmente pelo SwitchToGameplayMap,
+        // que vem em seguida. Não precisamos chamar Disable() aqui — fazê-lo
+        // ANTES do switch reproduziria o bug "callback órfão" que já temos
+        // proteção contra na action de Pause, mas não em outras actions (ex:
+        // Submit). Deixa o switch cuidar disso.
+    }
+
+    private static InputActionReference ToRef(InputAction action)
+    {
+        return action != null ? InputActionReference.Create(action) : null;
     }
 
     private void SwitchToUIMap(PlayerInput pi)

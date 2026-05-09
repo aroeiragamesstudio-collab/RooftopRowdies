@@ -268,7 +268,7 @@
                     "path": "<Gamepad>/buttonEast",
                     "interactions": "",
                     "processors": "",
-                    "groups": "",
+                    "groups": ";Gamepad",
                     "action": "Flight",
                     "isComposite": false,
                     "isPartOfComposite": false
@@ -279,7 +279,7 @@
                     "path": "<Keyboard>/escape",
                     "interactions": "",
                     "processors": "",
-                    "groups": "",
+                    "groups": ";WASD",
                     "action": "Pause",
                     "isComposite": false,
                     "isPartOfComposite": false
@@ -290,7 +290,7 @@
                     "path": "<Keyboard>/numpadEnter",
                     "interactions": "",
                     "processors": "",
-                    "groups": "",
+                    "groups": ";Arrows",
                     "action": "Pause",
                     "isComposite": false,
                     "isPartOfComposite": false
@@ -301,7 +301,7 @@
                     "path": "<Gamepad>/start",
                     "interactions": "",
                     "processors": "",
-                    "groups": "",
+                    "groups": ";Gamepad",
                     "action": "Pause",
                     "isComposite": false,
                     "isPartOfComposite": false
@@ -396,7 +396,7 @@
                     "path": "<Gamepad>/rightTrigger",
                     "interactions": "",
                     "processors": "",
-                    "groups": "",
+                    "groups": ";Gamepad",
                     "action": "Shoot",
                     "isComposite": false,
                     "isPartOfComposite": false
@@ -1017,7 +1017,7 @@
                 {
                     "name": "",
                     "id": "acd8a9c0-f41a-4de4-9cd9-2d6e036ec650",
-                    "path": "<Keyboard>/numpadEnter",
+                    "path": "<Keyboard>/enter",
                     "interactions": "",
                     "processors": "",
                     "groups": ";Arrows",
