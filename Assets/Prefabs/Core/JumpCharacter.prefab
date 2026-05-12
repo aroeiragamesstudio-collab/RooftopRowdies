@@ -46,6 +46,9 @@ GameObject:
   - component: {fileID: 3328446351080030107}
   - component: {fileID: 4321707408902692906}
   - component: {fileID: 1469354039694915974}
+  - component: {fileID: 307791229141863777}
+  - component: {fileID: 3666428546856662359}
+  - component: {fileID: 6960854198047856854}
   m_Layer: 0
   m_Name: JumpCharacter
   m_TagString: Untagged
@@ -210,7 +213,6 @@ MonoBehaviour:
   originalSpeed: 10
   originalJumpForce: 10
   playerInput: {fileID: 4321707408902692906}
-  holdTime: 10
   bottomPos: {fileID: 3331603123285948395}
   sidePos: {fileID: 1272709048106945235}
   topPos: {fileID: 6728050430414016210}
@@ -227,14 +229,12 @@ MonoBehaviour:
   sideSize: {x: 0.1, y: 1.5}
   topSize: {x: 1.5, y: 0.1}
   timeToNormal: 0.5
-  flightGravity: 0.2
-  flightTime: 3
-  flightSpeed: 2
   ropeAdjustCondition: 2
-  ropeAdjustSpeed: 2
-  ropeMinDistance: 1
-  ropeMaxDistance: 15
   swingDamping: 0.8
+  rope: {fileID: 307791229141863777}
+  flight: {fileID: 3666428546856662359}
+  holder: {fileID: 6960854198047856854}
+  moveInput: {x: 0, y: 0}
   beingShot: 0
   porky: {fileID: 0}
 --- !u!114 &4321707408902692906
@@ -298,6 +298,58 @@ MonoBehaviour:
       m_Calls: []
     m_ActionId: f898335d-6beb-45b5-8f8c-475d602a1dfd
     m_ActionName: 'JumpPlayer/Flight[/Keyboard/f,/DualSenseGamepadHID/buttonEast]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: c4e9dc66-192f-48d4-aa9d-fdfc42cfd5d9
+    m_ActionName: 'JumpPlayer/Pause[/Keyboard/escape,/Keyboard/numpadEnter,/DualSenseGamepadHID/start]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: d10dbd0a-f301-4642-b3a7-ae7e5b2accd7
+    m_ActionName: 'GunPlayer/Pause[/Keyboard/escape,/Keyboard/numpadEnter,/DualSenseGamepadHID/start]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: cbb6e587-6887-46ce-924d-d03c6c6d3cbf
+    m_ActionName: 'UI/Navigate[/Keyboard/w,/Keyboard/s,/Keyboard/a,/Keyboard/d,/Keyboard/upArrow,/Keyboard/downArrow,/Keyboard/leftArrow,/Keyboard/rightArrow,/DualSenseGamepadHID/leftStick]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 83a5d7ef-44fb-4258-9c3f-881b9adc3b6b
+    m_ActionName: UI/TrackedDeviceOrientation
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 7078c538-e87f-4d09-8751-77b3697cf379
+    m_ActionName: UI/TrackedDevicePosition
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: aeaa0df1-90c7-4ff3-acc9-98a009a6f7ea
+    m_ActionName: 'UI/RightClick[/Mouse/rightButton]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 50e53fc2-2b06-40b8-b2da-43e8b9aaa25f
+    m_ActionName: 'UI/MiddleClick[/Mouse/middleButton]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: aa67e468-3344-47ed-946a-f724a23874b2
+    m_ActionName: 'UI/ScrollWheel[/Mouse/scroll]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: d59f44a2-87fa-49ba-a806-d2624c3fe9a4
+    m_ActionName: 'UI/Click[/Mouse/leftButton,/Pen/tip]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 88043204-6561-4ae9-84a7-acbf38219c18
+    m_ActionName: 'UI/Point[/Mouse/position,/Pen/position]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: e201ae7d-09e4-4092-bad9-86fc03e42068
+    m_ActionName: 'UI/Submit[/Keyboard/space,/Keyboard/enter,/DualSenseGamepadHID/buttonSouth]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 25c53e9d-afaa-41bf-9e83-48dbb657e5f7
+    m_ActionName: 'UI/Cancel[/Keyboard/escape,/Keyboard/rightShift,/DualSenseGamepadHID/buttonEast]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 724e9197-4dc2-4b08-8287-037eceb56055
+    m_ActionName: 'UI/Pause[/Keyboard/escape,/Keyboard/numpadEnter,/DualSenseGamepadHID/start]'
   m_NeverAutoSwitchControlSchemes: 1
   m_DefaultControlScheme: Gamepad
   m_DefaultActionMap: JumpPlayer
@@ -323,6 +375,52 @@ DistanceJoint2D:
   m_AutoConfigureDistance: 0
   m_Distance: 5
   m_MaxDistanceOnly: 1
+--- !u!114 &307791229141863777
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3999135345264447133}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 13632cd52f5a7984f9b90ed9b92bafc6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Rooftop.Core.Abilities.RopeSystem
+  ropeAdjustSpeed: 2
+  ropeMinDistance: 1
+  ropeMaxDistance: 15
+  ropeTautTolerance: 0.2
+  tautGravityMultiplier: 4
+  tautVelocityThreshold: 0.1
+--- !u!114 &3666428546856662359
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3999135345264447133}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: df52a58e087f7b24cadc596aaadca5d0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Rooftop.Core.Abilities.Flight
+  flightGravity: 0.2
+  flightTime: 3
+  flightSpeed: 2
+--- !u!114 &6960854198047856854
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3999135345264447133}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 346f5e02a451bfb47a4ff3820b188c6f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Rooftop.Core.Abilities.SurfaceHold
+  holdTime: 10
 --- !u!1 &5186216534556626354
 GameObject:
   m_ObjectHideFlags: 0

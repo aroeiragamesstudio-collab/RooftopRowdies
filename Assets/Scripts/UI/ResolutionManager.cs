@@ -48,6 +48,12 @@ public class ResolutionManager : MonoBehaviour
             {
                 resolutionDropdown.value = saved;
                 resolutionDropdown.RefreshShownValue();
+
+                Resolution res = validResolutions[saved];
+                bool fs = SettingsMenu.instance != null
+                    ? SettingsMenu.instance.isFullscreen
+                    : Screen.fullScreen;
+                Screen.SetResolution(res.width, res.height, fs);
             }
         }
     }

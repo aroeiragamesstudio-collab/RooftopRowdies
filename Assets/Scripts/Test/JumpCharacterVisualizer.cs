@@ -155,13 +155,13 @@ public class JumpCharacterVisualizer : MonoBehaviour
                 // ── TIME-BASED DARKENING ──────────────────────────────────────────
                 // t goes from 0 (just grabbed) → 1 (hold time fully expired).
                 // We use the public HoldProgress property we expose on the controller.
-                float holdT = jumpChar.HoldProgress;
+                float holdT = jumpChar.holder.HoldProgress;
                 return Color.Lerp(holdStartColor, holdEndColor, holdT);
 
             case JumpCharacterController.CharacterState.Flying:
                 // ── TIME-BASED FADE FOR FLYING ───────────────────────────────────
                 // t goes from 0 (just started flying) → 1 (flight time nearly over).
-                float flyT = jumpChar.FlyProgress;
+                float flyT = jumpChar.flight.FlyProgress;
                 // Lerp from bright cyan toward a faded blue as flight runs out
                 return Color.Lerp(flyingColor, fallingColor, flyT);
 
@@ -183,7 +183,7 @@ public class JumpCharacterVisualizer : MonoBehaviour
         // Draws a small on-screen label with the current state during Play Mode.
         // Remove this block if you don't want it in your editor.
         GUI.Label(new Rect(10, 10, 300, 20),
-            $"[JumpChar] State: {jumpChar.currentState} | HoldProg: {jumpChar.HoldProgress:F2} | FlyProg: {jumpChar.FlyProgress:F2}");
+            $"[JumpChar] State: {jumpChar.currentState} | HoldProg: {jumpChar.holder.HoldProgress:F2} | FlyProg: {jumpChar.flight.FlyProgress:F2}");
 #endif
     }
 }

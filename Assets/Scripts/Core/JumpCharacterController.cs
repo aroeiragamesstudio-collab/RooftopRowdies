@@ -1,6 +1,8 @@
+using Rooftop.Core.Abilities;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using static UnityEditor.ShaderData;
 
 /// <summary>
 /// Script principal do personagem gato/que pula, sendo aqui a maioria das mudanças dele
@@ -28,7 +30,6 @@ public class JumpCharacterController : MonoBehaviour
     public PlayerInput playerInput;
 
     [Header("Informação da mecânica de agarrar")]
-    public float holdTime = 10f;
     [SerializeField] Transform bottomPos, sidePos, topPos;
     [SerializeField] LayerMask floorLayer, wallLayer, topLayer;
     [SerializeField] Vector2 bottomSize = new Vector2(1.5f, 0.1f);
@@ -38,30 +39,19 @@ public class JumpCharacterController : MonoBehaviour
     [Header("Informação de ser atirado")]
     public float timeToNormal = 5f;
 
-    [Header("Vôo")]
-    public float flightGravity = 0.2f;
-    public float flightTime = 3f;
-    public float flightSpeed = 2f;
-
-    [Header("Ajuste de Corda")]
-    [SerializeField] RopeAdjustCondition ropeAdjustCondition = RopeAdjustCondition.OnlyWhenAllyWaiting;
-    [SerializeField] float ropeAdjustSpeed = 2f;
-    [SerializeField] float ropeMinDistance = 1f;
-    public float ropeMaxDistance = 15f;
-
     [Header("Pêndulo")]
+    [SerializeField] RopeAdjustCondition ropeAdjustCondition = RopeAdjustCondition.OnlyWhenAllyWaiting;
     [SerializeField] float swingDamping = 0.8f;
 
-    [Header("Rope Taut Anti-Exploit")]
-    [SerializeField] float ropeTautTolerance = 0.2f;
-    [SerializeField] float tautGravityMultiplier = 4f;
-    [SerializeField] float tautVelocityThreshold = 0.1f;
+    [Header("Habilidades")]
+    public RopeSystem rope;
+    public Flight flight;
+    public SurfaceHold holder;
 
     [HideInInspector]
     public Vector2 moveInput;
-    float lastHorizontalDir = 1;
-    float originalGravity;
     float originalDamping;
+    float lastHorizontalDir = 1;
 
     InputAction moveAction;
     InputAction jumpAction;
@@ -73,24 +63,18 @@ public class JumpCharacterController : MonoBehaviour
     public bool beingShot;
 
     float timePassed;
-    float timePassedFlying;
     bool jumping;
     bool holding;
-    bool startHold;
     bool falling;
-    bool flying;
     bool waiting;
-    bool tautPenaltyActive;
     bool facingRight = true;
 
     [HideInInspector]
     public GunCharacterController porky;
-    DistanceJoint2D distanceJoint;
 
     void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
-        distanceJoint = GetComponent<DistanceJoint2D>();
 
         playerInput = GetComponent<PlayerInput>();
 
@@ -100,8 +84,6 @@ public class JumpCharacterController : MonoBehaviour
         jumpAction = playerInput.currentActionMap.FindAction("Jump");
         waitAction = playerInput.currentActionMap.FindAction("Wait");
         flightAction = playerInput.currentActionMap.FindAction("Flight");
-
-        originalGravity = rb.gravityScale;
 
         originalDamping = rb.linearDamping;
 
@@ -139,68 +121,27 @@ public class JumpCharacterController : MonoBehaviour
         if (moveInput.x != 0)
             lastHorizontalDir = Mathf.Sign(moveInput.x);
 
-        HandleRopeAdjust();
-        HandleRopeTautPenalty();
+        if(rope != null)
+        {
+            bool canAdjust = ropeAdjustCondition switch
+            {
+                RopeAdjustCondition.Always => true,
+                RopeAdjustCondition.OnlyWhenAllyWaiting => porky.currentState == GunCharacterController.CharacterState.SatDown,
+                RopeAdjustCondition.OnlyWhenWaiting => currentState == CharacterState.SatDown,
+                RopeAdjustCondition.OnlyWhenSwinging => currentState == CharacterState.Swinging,
+                RopeAdjustCondition.Never => false,
+                _ => false
+            };
+            if (canAdjust) rope.TryAdjust(moveInput.y);
+            rope.HandleRopeTautPenalty();
+        }
 
         // VERIFICAR SE NÃO FAZ MAIS SENTIDO SEGURAR MULTIPLAS VEZES AO INVÉS DE SÓ UMA
-        if (!startHold && jumpAction.IsPressed() && !OnGround() && (OnCeiling() || OnWall()))
-        {
-            holding = true;
+        holder.Tick(jumpAction.IsPressed(), jumpAction.WasReleasedThisFrame(),
+            OnGround(), OnCeiling() || OnWall());
 
-            startHold = true;
-
-            rb.angularVelocity = 0f;
-            rb.bodyType = RigidbodyType2D.Static;
-        }
-
-        if (jumpAction.WasReleasedThisFrame())
-        {
-            holding = false;
-
-            rb.bodyType = RigidbodyType2D.Dynamic;
-
-            timePassed = 0;
-        }
-
-        if (holding)
-        {
-            currentState = CharacterState.HoldingSurface;
-            timePassed += Time.deltaTime;
-
-            if (timePassed >= holdTime)
-            {
-                holding = false;
-                timePassed = 0;
-
-                rb.bodyType = RigidbodyType2D.Dynamic;
-            }
-            return;
-        }
-
-        if (startHold && OnGround())
-        {
-            startHold = false;
-        }
-
-        Flying();
-
-        if (flying)
-        {
-            timePassedFlying += Time.deltaTime;
-
-            if (timePassedFlying >= flightTime)
-            {
-                flying = false;
-                rb.gravityScale = originalGravity;
-            }
-        }
-
-        if(OnGround() || OnWall())
-        {
-            flying = false;
-            rb.gravityScale = originalGravity;
-            timePassedFlying = 0;
-        }
+        flight.Tick(flightAction.IsPressed(), flightAction.WasReleasedThisFrame(),
+            OnGround(), OnWall(), rope != null && rope.IsTautPenaltyActive);
 
         IsSwinging();
         Wait();
@@ -237,7 +178,9 @@ public class JumpCharacterController : MonoBehaviour
                 break;
             case CharacterState.Swinging:
                 rb.linearDamping = swingDamping;
-                HandlePendulumMotion();
+                if(porky.IsKinematic() && !OnGround())
+                    RopeSystem.ApplyPendulumForce(rb, porky.transform.position,
+                    moveInput.x, originalSpeed);
 
                 // Check if the player has surpassed the other player's height while swinging
                 if (rb.linearVelocityY > 0 && porky != null)
@@ -259,7 +202,7 @@ public class JumpCharacterController : MonoBehaviour
                 if(moveInput.x != 0)
                     rb.linearVelocityX = moveInput.x * originalSpeed;
                 else
-                    rb.linearVelocityX = lastHorizontalDir * flightSpeed;
+                    rb.linearVelocityX = lastHorizontalDir * flight.FlightSpeed;
                 break;
         }
     }
@@ -294,23 +237,6 @@ public class JumpCharacterController : MonoBehaviour
         }
     }
 
-    private void Flying()
-    {
-        if (tautPenaltyActive) return;
-
-        if (flightAction.IsPressed() && !OnGround())
-        {
-            flying = true;
-            rb.gravityScale = flightGravity;
-        }
-
-        if (flightAction.WasReleasedThisFrame() && flying)
-        {
-            flying = false;
-            rb.gravityScale = originalGravity;
-        }
-    }
-
     #region Position Check
     public bool OnGround()
     {
@@ -341,7 +267,7 @@ public class JumpCharacterController : MonoBehaviour
             return;
         }
 
-        if (flying)
+        if (flight.IsFlying)
         {
             currentState = CharacterState.Flying;
             return;
@@ -378,115 +304,6 @@ public class JumpCharacterController : MonoBehaviour
             currentState = CharacterState.Idle;
     }
 
-    private void HandlePendulumMotion()
-    {
-        if (porky.IsKinematic() && !OnGround())
-        {
-            Vector2 toConnected = porky.transform.position - (Vector3)rb.position;
-            Vector2 tangent = Vector2.Perpendicular(toConnected).normalized;
-
-            if (moveInput.x != 0)
-            {
-                rb.AddForce(-1 * moveInput.x * originalSpeed * tangent, ForceMode2D.Force);
-            }
-            if (moveInput.x == 0 && rb.linearVelocity.magnitude < 0.1f)
-            {
-                rb.linearVelocity = Vector2.zero;
-            }
-        }
-    }
-
-    public void SetTautPenalty(bool active, float multiplier)
-    {
-        tautPenaltyActive = active;
-        rb.gravityScale = active
-            ? originalGravity * multiplier
-            : originalGravity;
-    }
-
-    private void HandleRopeTautPenalty()
-    {
-        if (porky == null || distanceJoint == null) return;
-
-        Rigidbody2D porkyRb = porky.GetComponent<Rigidbody2D>();
-
-        // Step 1: Compute ACTUAL separation between both rigidbodies.
-        // We use this instead of distanceJoint.distance because the joint's
-        // .distance is the *target*, not the real-time measured separation.
-        float currentSeparation = Vector2.Distance(rb.position, porkyRb.position);
-
-        // The authoritative max is this controller's ropeMaxDistance,
-        // since this joint owns the rope length.
-        bool ropeIsMaxTaut = currentSeparation >= (distanceJoint.distance - ropeTautTolerance);
-
-        if (!ropeIsMaxTaut)
-        {
-            // Rope is slack — release penalty on both characters
-            if (tautPenaltyActive)
-            {
-                SetTautPenalty(false, 1f);
-                porky.SetTautPenalty(false, 1f);
-            }
-            return;
-        }
-
-        // Step 2: Are both characters pulling AWAY from each other?
-        // Compute the rope axis from this character (jump) toward the other (gun).
-        Vector2 ropeAxis = (porkyRb.position - rb.position).normalized;
-
-        // Dot each velocity against the direction AWAY from the partner.
-        // For jump: pulling away = moving opposite to ropeAxis (negative dot)
-        // For gun:  pulling away = moving along ropeAxis (positive dot)
-        float jumpPullAway = Vector2.Dot(rb.linearVelocity, -ropeAxis);
-        float gunPullAway = Vector2.Dot(porkyRb.linearVelocity, ropeAxis);
-
-        bool bothPullingApart = jumpPullAway > tautVelocityThreshold
-                             && gunPullAway > tautVelocityThreshold;
-
-        // Step 3: Apply or release penalty symmetrically
-        if (bothPullingApart && !tautPenaltyActive)
-        {
-            SetTautPenalty(true, tautGravityMultiplier);
-            porky.SetTautPenalty(true, tautGravityMultiplier);
-        }
-        else if (!bothPullingApart && tautPenaltyActive)
-        {
-            SetTautPenalty(false, 1f);
-            porky.SetTautPenalty(false, 1f);
-        }
-    }
-
-    private void HandleRopeAdjust()
-    {
-        if (distanceJoint == null || porky == null) return;
-
-        bool conditionMet = ropeAdjustCondition switch
-        {
-            RopeAdjustCondition.Always => true,
-            RopeAdjustCondition.OnlyWhenAllyWaiting => porky.currentState == GunCharacterController.CharacterState.SatDown,
-            RopeAdjustCondition.OnlyWhenWaiting => currentState == CharacterState.SatDown,
-            RopeAdjustCondition.OnlyWhenSwinging => currentState == CharacterState.Swinging,
-            RopeAdjustCondition.Never => false,
-            _ => false
-        };
-
-        if (!conditionMet) return;
-
-        // moveInput.y is already being read — W = +1 (extend), S = -1 (retract)
-        // We invert so W = shorter (pull up) and S = longer (let out) — change sign if you prefer the opposite
-        float verticalInput = moveInput.y;
-        AdjustRopeDistance(verticalInput);
-    }
-
-    public void AdjustRopeDistance(float verticalInput)
-    {
-        if (distanceJoint == null) return;
-        if (Mathf.Abs(verticalInput) < 0.1f) return;
-
-        float newDistance = distanceJoint.distance - (verticalInput * ropeAdjustSpeed * Time.deltaTime);
-        distanceJoint.distance = Mathf.Clamp(newDistance, ropeMinDistance, ropeMaxDistance);
-    }
-
     public bool IsKinematic()
     {
         if (rb.bodyType == RigidbodyType2D.Kinematic)
@@ -498,9 +315,6 @@ public class JumpCharacterController : MonoBehaviour
             return false;
         }
     }
-
-    public float HoldProgress => holdTime > 0f ? Mathf.Clamp01(timePassed / holdTime) : 0f;
-    public float FlyProgress => flightTime > 0f ? Mathf.Clamp01(timePassedFlying / flightTime) : 0f;
 
     private void OnDrawGizmosSelected()
     {

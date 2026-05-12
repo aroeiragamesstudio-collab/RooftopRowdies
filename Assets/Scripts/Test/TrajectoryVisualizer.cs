@@ -509,7 +509,7 @@ public class TrajectoryVisualizer : MonoBehaviour
     {
         if (_gun == null) return AngleToVelocity(launchAngleDeg, launchSpeed);
         // Shot goes forward: matches shootDirection = transform.right in GunController
-        return (Vector2)_gun.transform.right * _gun.shootForce;
+        return (Vector2)_gun.transform.right * _gun.absorbSystem.shootForce;
     }
 
     // -------------------------------------------------------------------------

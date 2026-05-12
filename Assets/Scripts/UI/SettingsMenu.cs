@@ -1,25 +1,13 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Audio;
-using UnityEngine.Rendering;
 using UnityEngine.UI;
 
 public class SettingsMenu : MonoBehaviour
 {
     public static SettingsMenu instance { get; private set; }
 
-    // Chaves PlayerPrefs
-    // Modificar depois para funcionar sem PlayerPrefs ou se não há necessidade
-    private const string KEY_MASTER_VOL = "MasterVolume";
-    private const string KEY_MUSIC_VOL = "MusicVolume";
-    private const string KEY_SFX_VOL = "SFXVolume";
-    private const string KEY_FULLSCREEN = "Fullscreen";
-    private const string KEY_RESOLUTION = "ResolutionIndex";
-    private const string KEY_RUMBLE = "RumbleEnabled";
-    private const string KEY_CAM_SHAKE = "CameraShake";
-    private const string KEY_COLORBLIND = "ColorblindMode";
+    private SettingsData data;
 
     [Header("Audio Mixer")]
     [SerializeField] AudioMixer audioMixer;
@@ -54,7 +42,7 @@ public class SettingsMenu : MonoBehaviour
 
     private void Awake()
     {
-        if(instance != null && instance != this)
+        if (instance != null && instance != this)
         {
             Destroy(gameObject);
             return;
@@ -63,6 +51,7 @@ public class SettingsMenu : MonoBehaviour
         instance = this;
         DontDestroyOnLoad(gameObject);
 
+        data = SettingsRepository.Load();
         LoadAllSettings();
     }
 
@@ -84,7 +73,7 @@ public class SettingsMenu : MonoBehaviour
         {
             tabPanels[i].SetActive(i == index);
 
-            if(tabButtons != null && i < tabButtons.Count)
+            if (tabButtons != null && i < tabButtons.Count)
             {
                 ColorBlock cb = tabButtons[i].colors;
                 cb.normalColor = (i == index) ? activeTabColor : inactiveTabColor;
@@ -100,13 +89,13 @@ public class SettingsMenu : MonoBehaviour
     void LoadAllSettings()
     {
         // Load with sensible defaults if no key exists yet
-        float masterVol = PlayerPrefs.GetFloat(KEY_MASTER_VOL, 0f);
-        float musicVol = PlayerPrefs.GetFloat(KEY_MUSIC_VOL, 0f);
-        float sfxVol = PlayerPrefs.GetFloat(KEY_SFX_VOL, 0f);
-        isFullscreen = PlayerPrefs.GetInt(KEY_FULLSCREEN, 1) == 1;
-        isRumbleEnabled = PlayerPrefs.GetInt(KEY_RUMBLE, 1) == 1;
-        isCameraShakeEnabled = PlayerPrefs.GetInt(KEY_CAM_SHAKE, 1) == 1;
-        isColorblindMode = PlayerPrefs.GetInt(KEY_COLORBLIND, 0) == 1;
+        float masterVol = data.masterVolume;
+        float musicVol = data.musicVolume;
+        float sfxVol = data.sfxVolume;
+        isFullscreen = data.fullscreen;
+        isRumbleEnabled = data.rumbleEnabled;
+        isCameraShakeEnabled = data.cameraShakeEnabled;
+        isColorblindMode = data.colorblindMode;
 
         // Apply to actual systems immediately
         audioMixer.SetFloat("MasterVolume", masterVol);
@@ -146,7 +135,7 @@ public class SettingsMenu : MonoBehaviour
 
     public void SaveAndClose()
     {
-        PlayerPrefs.Save();
+        SettingsRepository.Save(data);
         MenuController.instance.CloseOptions();
     }
 
@@ -156,20 +145,20 @@ public class SettingsMenu : MonoBehaviour
 
     public void SetMasterVolume(float volume)
     {
+        data.masterVolume = volume;
         audioMixer.SetFloat("MasterVolume", volume);
-        PlayerPrefs.SetFloat(KEY_MASTER_VOL, volume);
     }
 
     public void SetMusicVolume(float volume)
     {
+        data.musicVolume = volume;
         audioMixer.SetFloat("MusicVolume", volume);
-        PlayerPrefs.SetFloat(KEY_MUSIC_VOL, volume);
     }
 
     public void SetSFXVolume(float volume)
     {
+        data.sfxVolume = volume;
         audioMixer.SetFloat("SFXVolume", volume);
-        PlayerPrefs.SetFloat(KEY_SFX_VOL, volume);
     }
 
     #endregion
@@ -178,15 +167,15 @@ public class SettingsMenu : MonoBehaviour
 
     public void SetFullscreen(bool _isFullscreen)
     {
+        data.fullscreen = _isFullscreen;
         Screen.fullScreen = _isFullscreen;
         isFullscreen = _isFullscreen;
-        PlayerPrefs.SetInt(KEY_FULLSCREEN, _isFullscreen ? 1 : 0);
     }
 
     public void SetResolution(int resolutionIndex, Resolution resolution)
     {
+        data.resolutionIndex = resolutionIndex;
         Screen.SetResolution(resolution.width, resolution.height, isFullscreen);
-        PlayerPrefs.SetInt(KEY_RESOLUTION, resolutionIndex);
     }
 
     #endregion
@@ -195,21 +184,21 @@ public class SettingsMenu : MonoBehaviour
 
     public void SetRumble(bool enabled)
     {
+        data.rumbleEnabled = enabled;
         isRumbleEnabled = enabled;
-        PlayerPrefs.SetInt(KEY_RUMBLE, enabled ? 1 : 0);
         // Chamar RumbleManager.instance.SetEnabled(enabled) ou depois colocar que chame esse metodo
     }
     public void SetCameraShake(bool enabled)
     {
+        data.cameraShakeEnabled = enabled;
         isCameraShakeEnabled = enabled;
-        PlayerPrefs.SetInt(KEY_CAM_SHAKE, enabled ? 1 : 0);
         // Future: CameraShakeManager.Instance.SetEnabled(enabled)
     }
 
     public void SetColorblindMode(bool enabled)
     {
+        data.colorblindMode = enabled;
         isColorblindMode = enabled;
-        PlayerPrefs.SetInt(KEY_COLORBLIND, enabled ? 1 : 0);
         // Future: pass to a PostProcessing or shader global
     }
 

@@ -7325,7 +7325,6 @@ GameObject:
   - component: {fileID: 8925749053566408793}
   - component: {fileID: 6984252945262585208}
   - component: {fileID: 2769266851897032022}
-  - component: {fileID: 8163823776509494533}
   - component: {fileID: 8395001688587628412}
   - component: {fileID: 414723311217600405}
   m_Layer: 0
@@ -7966,10 +7965,8 @@ MonoBehaviour:
   aimActionRef: {fileID: -4990979050747029019, guid: 69f3ddfd4ba990047a8694e49654f87e, type: 3}
   offset: 0
   gunKnockback: 7
-  shootForce: 13
   timeBetweenShots: 1
-  absorbDistance: 2
-  aimTolerance: 0.8
+  absorbSystem: {fileID: 0}
   jumpChar: {fileID: 0}
 --- !u!1 &5041232679067497450
 GameObject:
@@ -8361,8 +8358,8 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 136
   bottomSize: {x: 1.5, y: 0.2}
-  ropeAdjustCondition: 2
   swingDamping: 0.8
+  ropeAdjustCondition: 2
   paws: {fileID: 0}
   absorbed: 0
   waiting: 0
@@ -8477,6 +8474,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2017675104079909539}
   - component: {fileID: 4434412641738134517}
+  - component: {fileID: 7544878778558022319}
   m_Layer: 0
   m_Name: Gun
   m_TagString: Untagged
@@ -8484,6 +8482,21 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!114 &7544878778558022319
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7544878778558022318}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ab1c8067a86ee3944bb321ddbc3b4408, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AbsorbShootSystem
+  absorbDistance: 2
+  aimTolerance: 0.8
+  shootForce: 13
 --- !u!4 &7881542612539144988
 Transform:
   m_ObjectHideFlags: 0
@@ -8515,7 +8528,6 @@ MonoBehaviour:
   originalSpeed: 10
   originalJumpForce: 10
   playerInput: {fileID: 8693407025799113949}
-  holdTime: 10
   bottomPos: {fileID: 7881542612539144988}
   sidePos: {fileID: 5977812165801969188}
   topPos: {fileID: 2162343980665684517}
@@ -8532,17 +8544,11 @@ MonoBehaviour:
   sideSize: {x: 0.1, y: 1.5}
   topSize: {x: 1.5, y: 0.1}
   timeToNormal: 0.5
-  flightGravity: 0.2
-  flightTime: 3
-  flightSpeed: 2
   ropeAdjustCondition: 2
-  ropeAdjustSpeed: 2
-  ropeMinDistance: 1
-  ropeMaxDistance: 15
   swingDamping: 0.8
-  ropeTautTolerance: 0.2
-  tautGravityMultiplier: 4
-  tautVelocityThreshold: 0.1
+  rope: {fileID: 8693407025799113950}
+  flight: {fileID: 8693407025799113951}
+  holder: {fileID: 8693407025799113952}
   moveInput: {x: 0, y: 0}
   beingShot: 0
   porky: {fileID: 0}
@@ -8589,26 +8595,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 6027115342292236781}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!232 &8163823776509494533
-DistanceJoint2D:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 989660462411588830}
-  m_Enabled: 0
-  serializedVersion: 4
-  m_EnableCollision: 0
-  m_ConnectedRigidBody: {fileID: 0}
-  m_BreakForce: Infinity
-  m_BreakTorque: Infinity
-  m_BreakAction: 3
-  m_AutoConfigureConnectedAnchor: 0
-  m_Anchor: {x: 0, y: 0}
-  m_ConnectedAnchor: {x: 0, y: 0}
-  m_AutoConfigureDistance: 0
-  m_Distance: 5
-  m_MaxDistanceOnly: 1
 --- !u!4 &8348328257209202724
 Transform:
   m_ObjectHideFlags: 0
@@ -8637,6 +8623,9 @@ GameObject:
   - component: {fileID: 6877367023344515984}
   - component: {fileID: 4277835844026670658}
   - component: {fileID: 7885207075111072620}
+  - component: {fileID: 8693407025799113950}
+  - component: {fileID: 8693407025799113951}
+  - component: {fileID: 8693407025799113952}
   - component: {fileID: 8693407025799113949}
   - component: {fileID: 6285010681078576497}
   - component: {fileID: 8029631244685167136}
@@ -8794,6 +8783,52 @@ MonoBehaviour:
   m_DefaultActionMap: JumpPlayer
   m_SplitScreenIndex: -1
   m_Camera: {fileID: 0}
+--- !u!114 &8693407025799113950
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8368583335895089770}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 13632cd52f5a7984f9b90ed9b92bafc6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Rooftop.Core.Abilities.RopeSystem
+  ropeAdjustSpeed: 2
+  ropeMinDistance: 1
+  ropeMaxDistance: 15
+  ropeTautTolerance: 0.2
+  tautGravityMultiplier: 4
+  tautVelocityThreshold: 0.1
+--- !u!114 &8693407025799113951
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8368583335895089770}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: df52a58e087f7b24cadc596aaadca5d0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Rooftop.Core.Abilities.Flight
+  flightGravity: 0.2
+  flightTime: 3
+  flightSpeed: 2
+--- !u!114 &8693407025799113952
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8368583335895089770}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 346f5e02a451bfb47a4ff3820b188c6f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Rooftop.Core.Abilities.SurfaceHold
+  holdTime: 10
 --- !u!4 &8897268807405694356
 Transform:
   m_ObjectHideFlags: 0

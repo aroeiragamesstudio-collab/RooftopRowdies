@@ -1,6 +1,4 @@
-using System;
-using System.Collections;
-using Unity.VisualScripting;
+using Rooftop.Core.Abilities;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -30,11 +28,9 @@ public class GunCharacterController : MonoBehaviour
     [SerializeField] LayerMask floorLayer;
     [SerializeField] Vector2 bottomSize = new Vector2(1.5f, 0.2f);
 
-    [Header("Ajuste de Corda")]
-    [SerializeField] RopeAdjustCondition ropeAdjustCondition = RopeAdjustCondition.OnlyWhenAllyWaiting;
-
     [Header("Pêndulo")]
     [SerializeField] float swingDamping = 0.8f;
+    [SerializeField] RopeAdjustCondition ropeAdjustCondition = RopeAdjustCondition.OnlyWhenAllyWaiting;
 
     // Variaveis privadas
     [HideInInspector]
@@ -43,22 +39,19 @@ public class GunCharacterController : MonoBehaviour
     Rigidbody2D rb;
     InputAction moveAction;
     InputAction waitAction;
-    DistanceJoint2D distanceJoint;
-    bool falling; 
-    bool tautPenaltyActive;
+    bool falling;
     [HideInInspector]
     public bool absorbed;
     [HideInInspector]
     public bool waiting;
     float originalDamping;
-    float originalGravity;
+    RopeSystem rope;
 
     private void Start()
     {
         paws = FindFirstObjectByType<JumpCharacterController>();
 
         rb = GetComponent<Rigidbody2D>();
-        distanceJoint = paws.GetComponent<DistanceJoint2D>();
 
         playerInput = GetComponent<PlayerInput>();
 
@@ -69,8 +62,9 @@ public class GunCharacterController : MonoBehaviour
         moveAction = playerInput.currentActionMap.FindAction("Move");
         waitAction = playerInput.currentActionMap.FindAction("Wait");
 
+        rope = paws.GetComponent<RopeSystem>();
+
         originalDamping = rb.linearDamping;
-        originalGravity = rb.gravityScale;
 
         if (moveAction == null)
             Debug.LogError("Não foi encontrada a ação 'Move'. Verifique o Input Map");
@@ -84,8 +78,22 @@ public class GunCharacterController : MonoBehaviour
             moveInput.x = 0;
         }
 
+        if (paws != null && paws.rope != null)
+        {
+            bool canAdjust = ropeAdjustCondition switch
+            {
+                RopeAdjustCondition.Always => true,
+                RopeAdjustCondition.OnlyWhenAllyWaiting => currentState == CharacterState.SatDown,
+                RopeAdjustCondition.OnlyWhenWaiting => currentState == CharacterState.SatDown,
+                RopeAdjustCondition.OnlyWhenSwinging => currentState == CharacterState.Swinging,
+                RopeAdjustCondition.Never => false,
+                _ => false
+            };
+            if (canAdjust) rope.TryAdjust(moveInput.y);
+            rope.HandleRopeTautPenalty();
+        }
+
         Wait();
-        HandleRopeAdjust();
         IsSwinging();
     }
 
@@ -107,7 +115,9 @@ public class GunCharacterController : MonoBehaviour
                 break;
             case CharacterState.Swinging:
                 rb.linearDamping = swingDamping;
-                HandlePendulumMotion();
+                if (paws.IsKinematic() && !OnGround())
+                    RopeSystem.ApplyPendulumForce(rb, paws.transform.position,
+                        moveInput.x, originalSpeed);
 
                 // Check if the player has surpassed the other player's height while swinging
                 if (rb.linearVelocityY > 0 && paws != null)
@@ -173,54 +183,6 @@ public class GunCharacterController : MonoBehaviour
             rb.bodyType = RigidbodyType2D.Dynamic;
             waiting = false;
         }
-    }
-
-    private void HandlePendulumMotion()
-    {
-        if (paws.IsKinematic() && !OnGround())
-        {
-            Vector2 toConnected = paws.transform.position - (Vector3)rb.position;
-            Vector2 tangent = Vector2.Perpendicular(toConnected).normalized;
-
-            if (moveInput.x != 0)
-            {
-                rb.AddForce(-1 * moveInput.x * originalSpeed * tangent, ForceMode2D.Force);
-            }
-            //if (x == 0 && rb.linearVelocity.magnitude < 0.1f)
-            //{
-            //    rb.linearVelocity = Vector2.zero;
-            //}
-        }
-    }
-
-    public void SetTautPenalty(bool active, float multiplier)
-    {
-        tautPenaltyActive = active;
-        rb.gravityScale = active
-            ? originalGravity * multiplier
-            : originalGravity;
-    }
-
-    private void HandleRopeAdjust()
-    {
-        if (distanceJoint == null || paws == null) return;
-
-        bool conditionMet = ropeAdjustCondition switch
-        {
-            RopeAdjustCondition.Always => true,
-            RopeAdjustCondition.OnlyWhenAllyWaiting => paws.currentState == JumpCharacterController.CharacterState.SatDown,
-            RopeAdjustCondition.OnlyWhenWaiting => currentState == CharacterState.SatDown,
-            RopeAdjustCondition.OnlyWhenSwinging => currentState == CharacterState.Swinging,
-            RopeAdjustCondition.Never => false,
-            _ => false
-        };
-
-        if (!conditionMet) return;
-
-        // moveInput.y is already being read — W = +1 (extend), S = -1 (retract)
-        // We invert so W = shorter (pull up) and S = longer (let out) — change sign if you prefer the opposite
-        float verticalInput = moveInput.y;
-        paws.AdjustRopeDistance(verticalInput);
     }
 
     public bool IsKinematic()

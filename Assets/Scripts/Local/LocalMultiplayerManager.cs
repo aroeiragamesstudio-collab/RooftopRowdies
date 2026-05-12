@@ -1,7 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using Rooftop.Core.Abilities;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.InputSystem.LowLevel;
 using UnityEngine.InputSystem.Users;
 using UnityEngine.SceneManagement;
 
@@ -80,6 +79,10 @@ public class LocalMultiplayerManager : MonoBehaviour
         Rigidbody2D gunRb = gunCharacter.GetComponent<Rigidbody2D>();
         Rigidbody2D jumpRb = jumpCharacter.GetComponent<Rigidbody2D>();
         DistanceJoint2D jumpJoint = jumpCharacter.GetComponent<DistanceJoint2D>();
+
+        RopeSystem rope = jumpCharacter.GetComponent<RopeSystem>();
+        if (rope != null) rope.Init(gunCtrl, jumpCtrl);
+        if (jumpCtrl != null) jumpCtrl.rope = rope;
 
         if (gunCtrl != null) gunCtrl.paws = jumpCtrl;
         if (jumpCtrl != null) jumpCtrl.porky = gunCtrl;
