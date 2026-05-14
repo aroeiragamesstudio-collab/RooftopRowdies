@@ -228,7 +228,7 @@ MonoBehaviour:
   bottomSize: {x: 1.5, y: 0.1}
   sideSize: {x: 0.1, y: 1.5}
   topSize: {x: 1.5, y: 0.1}
-  timeToNormal: 0.5
+  timeToNormal: 0.25
   ropeAdjustCondition: 2
   swingDamping: 0.8
   rope: {fileID: 307791229141863777}
@@ -388,10 +388,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Rooftop.Core.Abilities.RopeSystem
   ropeAdjustSpeed: 2
-  ropeMinDistance: 1
-  ropeMaxDistance: 15
+  ropeMinDistance: 3
+  ropeMaxDistance: 10
   ropeTautTolerance: 0.2
-  tautGravityMultiplier: 4
+  tautGravityMultiplier: 5
   tautVelocityThreshold: 0.1
 --- !u!114 &3666428546856662359
 MonoBehaviour:
@@ -405,8 +405,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: df52a58e087f7b24cadc596aaadca5d0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Rooftop.Core.Abilities.Flight
-  flightGravity: 0.2
-  flightTime: 3
+  flightGravity: 0.5
+  flightTime: 4
   flightSpeed: 2
 --- !u!114 &6960854198047856854
 MonoBehaviour:
@@ -420,7 +420,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 346f5e02a451bfb47a4ff3820b188c6f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Rooftop.Core.Abilities.SurfaceHold
-  holdTime: 10
+  holdTime: 15
 --- !u!1 &5186216534556626354
 GameObject:
   m_ObjectHideFlags: 0

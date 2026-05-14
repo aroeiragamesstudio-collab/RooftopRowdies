@@ -247,6 +247,58 @@ MonoBehaviour:
       m_Calls: []
     m_ActionId: f898335d-6beb-45b5-8f8c-475d602a1dfd
     m_ActionName: 'JumpPlayer/Flight[/Keyboard/f,/DualSenseGamepadHID/buttonEast]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: c4e9dc66-192f-48d4-aa9d-fdfc42cfd5d9
+    m_ActionName: 'JumpPlayer/Pause[/Keyboard/escape,/Keyboard/numpadEnter]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: d10dbd0a-f301-4642-b3a7-ae7e5b2accd7
+    m_ActionName: 'GunPlayer/Pause[/Keyboard/escape,/Keyboard/numpadEnter]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: cbb6e587-6887-46ce-924d-d03c6c6d3cbf
+    m_ActionName: 'UI/Navigate[/Keyboard/w,/Keyboard/s,/Keyboard/a,/Keyboard/d,/Keyboard/upArrow,/Keyboard/downArrow,/Keyboard/leftArrow,/Keyboard/rightArrow]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 83a5d7ef-44fb-4258-9c3f-881b9adc3b6b
+    m_ActionName: UI/TrackedDeviceOrientation
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 7078c538-e87f-4d09-8751-77b3697cf379
+    m_ActionName: UI/TrackedDevicePosition
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: aeaa0df1-90c7-4ff3-acc9-98a009a6f7ea
+    m_ActionName: 'UI/RightClick[/Mouse/rightButton]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 50e53fc2-2b06-40b8-b2da-43e8b9aaa25f
+    m_ActionName: 'UI/MiddleClick[/Mouse/middleButton]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: aa67e468-3344-47ed-946a-f724a23874b2
+    m_ActionName: 'UI/ScrollWheel[/Mouse/scroll]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: d59f44a2-87fa-49ba-a806-d2624c3fe9a4
+    m_ActionName: 'UI/Click[/Mouse/leftButton]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 88043204-6561-4ae9-84a7-acbf38219c18
+    m_ActionName: 'UI/Point[/Mouse/position]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: e201ae7d-09e4-4092-bad9-86fc03e42068
+    m_ActionName: 'UI/Submit[/Keyboard/space,/Keyboard/enter]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 25c53e9d-afaa-41bf-9e83-48dbb657e5f7
+    m_ActionName: 'UI/Cancel[/Keyboard/escape,/Keyboard/rightShift]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 724e9197-4dc2-4b08-8287-037eceb56055
+    m_ActionName: 'UI/Pause[/Keyboard/escape,/Keyboard/numpadEnter]'
   m_NeverAutoSwitchControlSchemes: 1
   m_DefaultControlScheme: Gamepad
   m_DefaultActionMap: GunPlayer
@@ -444,10 +496,10 @@ MonoBehaviour:
   rbPlayer: {fileID: 8725384248250218035}
   aimActionRef: {fileID: -4990979050747029019, guid: 69f3ddfd4ba990047a8694e49654f87e, type: 3}
   offset: 0
-  gunKnockback: 7
-  timeBetweenShots: 1
-  jumpChar: {fileID: 0}
+  gunKnockback: 5
+  timeBetweenShots: 1.5
   absorbSystem: {fileID: 1094376754034948374}
+  jumpChar: {fileID: 0}
 --- !u!114 &1094376754034948374
 MonoBehaviour:
   m_ObjectHideFlags: 0

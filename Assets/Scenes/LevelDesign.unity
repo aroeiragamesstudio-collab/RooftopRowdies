@@ -7964,9 +7964,9 @@ MonoBehaviour:
   rbPlayer: {fileID: 8925749053566408793}
   aimActionRef: {fileID: -4990979050747029019, guid: 69f3ddfd4ba990047a8694e49654f87e, type: 3}
   offset: 0
-  gunKnockback: 7
-  timeBetweenShots: 1
-  absorbSystem: {fileID: 0}
+  gunKnockback: 8
+  timeBetweenShots: 1.5
+  absorbSystem: {fileID: 7544878778558022319}
   jumpChar: {fileID: 0}
 --- !u!1 &5041232679067497450
 GameObject:
@@ -8494,9 +8494,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ab1c8067a86ee3944bb321ddbc3b4408, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AbsorbShootSystem
-  absorbDistance: 2
+  absorbDistance: 3
   aimTolerance: 0.8
-  shootForce: 13
+  shootForce: 15
 --- !u!4 &7881542612539144988
 Transform:
   m_ObjectHideFlags: 0
@@ -8543,7 +8543,7 @@ MonoBehaviour:
   bottomSize: {x: 1.5, y: 0.1}
   sideSize: {x: 0.1, y: 1.5}
   topSize: {x: 1.5, y: 0.1}
-  timeToNormal: 0.5
+  timeToNormal: 0.25
   ropeAdjustCondition: 2
   swingDamping: 0.8
   rope: {fileID: 8693407025799113950}
@@ -8796,10 +8796,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Rooftop.Core.Abilities.RopeSystem
   ropeAdjustSpeed: 2
-  ropeMinDistance: 1
-  ropeMaxDistance: 15
-  ropeTautTolerance: 0.2
-  tautGravityMultiplier: 4
+  ropeMinDistance: 2
+  ropeMaxDistance: 10
+  ropeTautTolerance: 0.1
+  tautGravityMultiplier: 10
   tautVelocityThreshold: 0.1
 --- !u!114 &8693407025799113951
 MonoBehaviour:
@@ -8813,8 +8813,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: df52a58e087f7b24cadc596aaadca5d0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Rooftop.Core.Abilities.Flight
-  flightGravity: 0.2
-  flightTime: 3
+  flightGravity: 0.85
+  flightTime: 4
   flightSpeed: 2
 --- !u!114 &8693407025799113952
 MonoBehaviour:
