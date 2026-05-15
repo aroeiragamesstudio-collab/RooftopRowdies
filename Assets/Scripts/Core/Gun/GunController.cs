@@ -42,6 +42,8 @@ public class GunController : MonoBehaviour
 
         jumpChar = FindFirstObjectByType<JumpCharacterController>();
 
+        absorbSystem.Init(this.transform, jumpChar, rbPlayer.GetComponent<GunCharacterController>());
+
         UpdateAimMode();
     }
 

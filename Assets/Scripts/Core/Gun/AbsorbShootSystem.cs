@@ -4,6 +4,10 @@ using UnityEngine;
 public class AbsorbShootSystem : MonoBehaviour
 {
     [Header("Absorb")]
+    [Tooltip("Estados em que pode absorver o gato. Clique em quais quer que possa absorver")]
+    public AbsorbCondition absorbableStates = AbsorbCondition.Idle |
+                                              AbsorbCondition.Walking |
+                                              AbsorbCondition.Falling;
     public float absorbDistance = 2f;
     public float aimTolerance = 0.8f;
 
@@ -27,6 +31,9 @@ public class AbsorbShootSystem : MonoBehaviour
     public void TryAbsorb()
     {
         if(IsAbsorbed || _paws == null) return;
+
+        AbsorbCondition currentState = StateToBit(_paws.currentState);
+        if ((absorbableStates & currentState) == 0) return;
 
         float distanceToPlayer = Vector2.Distance(transform.position, _paws.transform.position);
         Vector2 directionToPlayer = (_paws.transform.position - transform.position).normalized;
@@ -78,7 +85,26 @@ public class AbsorbShootSystem : MonoBehaviour
             col.enabled = true;
             rb.bodyType = RigidbodyType2D.Dynamic;
             _paws.transform.position = position;
+            _paws.holder.Reset();
             rb.linearVelocity = velocity;
         }
+    }
+
+    private static AbsorbCondition StateToBit(JumpCharacterController.CharacterState state)
+    {
+        return state switch
+        {
+            JumpCharacterController.CharacterState.Idle => AbsorbCondition.Idle,
+            JumpCharacterController.CharacterState.Walking => AbsorbCondition.Walking,
+            JumpCharacterController.CharacterState.Falling => AbsorbCondition.Falling,
+            JumpCharacterController.CharacterState.Jumping => AbsorbCondition.Jumping,
+            JumpCharacterController.CharacterState.Shot => AbsorbCondition.Shot,
+            JumpCharacterController.CharacterState.Swinging => AbsorbCondition.Swinging,
+            JumpCharacterController.CharacterState.SatDown => AbsorbCondition.SatDown,
+            JumpCharacterController.CharacterState.HoldingSurface => AbsorbCondition.HoldingSurface,
+            JumpCharacterController.CharacterState.Absorbed => AbsorbCondition.Absorbed,
+            JumpCharacterController.CharacterState.Flying => AbsorbCondition.Flying,
+            _ => AbsorbCondition.None
+        };
     }
 }

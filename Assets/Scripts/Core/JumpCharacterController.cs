@@ -57,6 +57,7 @@ public class JumpCharacterController : MonoBehaviour
     InputAction jumpAction;
     InputAction waitAction;
     InputAction flightAction;
+    InputAction ropeAdjustAction;
     Rigidbody2D rb;
 
     [HideInInspector]
@@ -84,6 +85,7 @@ public class JumpCharacterController : MonoBehaviour
         jumpAction = playerInput.currentActionMap.FindAction("Jump");
         waitAction = playerInput.currentActionMap.FindAction("Wait");
         flightAction = playerInput.currentActionMap.FindAction("Flight");
+        ropeAdjustAction = playerInput.currentActionMap.FindAction("RopeAdjust");
 
         originalDamping = rb.linearDamping;
 
@@ -102,13 +104,12 @@ public class JumpCharacterController : MonoBehaviour
                 beingShot = false;
                 timePassed = 0;
             }
-            return;
         }
 
         moveInput = moveAction.ReadValue<Vector2>();
 
         // Verificar depois para tentar melhorar a chamada
-        if (waiting)
+        if (waiting || beingShot)
         {
             moveInput.x = 0;
         }
@@ -132,7 +133,7 @@ public class JumpCharacterController : MonoBehaviour
                 RopeAdjustCondition.Never => false,
                 _ => false
             };
-            if (canAdjust) rope.TryAdjust(moveInput.y);
+            if (canAdjust) rope.TryAdjust(ropeAdjustAction?.ReadValue<float>() ?? 0f);
             rope.HandleRopeTautPenalty();
         }
 
@@ -261,15 +262,23 @@ public class JumpCharacterController : MonoBehaviour
     {
         if (porky == null) return;
 
-        if(beingShot)
+        if (holder.IsHolding)
         {
-            currentState = CharacterState.Shot;
+            currentState = CharacterState.HoldingSurface;
+            NotBeingShot();
             return;
         }
 
         if (flight.IsFlying)
         {
             currentState = CharacterState.Flying;
+            NotBeingShot();
+            return;
+        }
+
+        if (beingShot)
+        {
+            currentState = CharacterState.Shot;
             return;
         }
 
@@ -302,6 +311,15 @@ public class JumpCharacterController : MonoBehaviour
         }
         else if (OnGround() && moveInput.x == 0)
             currentState = CharacterState.Idle;
+    }
+
+    private void NotBeingShot()
+    {
+        if (beingShot)
+        {
+            beingShot = false;
+            timePassed = 0;
+        }
     }
 
     public bool IsKinematic()

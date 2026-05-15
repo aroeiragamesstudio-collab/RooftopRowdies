@@ -8494,6 +8494,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ab1c8067a86ee3944bb321ddbc3b4408, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AbsorbShootSystem
+  absorbableStates: 7
   absorbDistance: 3
   aimTolerance: 0.8
   shootForce: 15

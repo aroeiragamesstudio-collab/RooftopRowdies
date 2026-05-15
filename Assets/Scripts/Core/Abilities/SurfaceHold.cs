@@ -12,7 +12,6 @@ namespace Rooftop.Core.Abilities
 
         Rigidbody2D _rb;
         float _timer;
-        bool _usedSinceLastLanding;
 
         private void Awake()
         {
@@ -22,17 +21,15 @@ namespace Rooftop.Core.Abilities
         public void Tick(bool jumpHeld, bool jumpReleased, bool grounded,
             bool touchingSurface)
         {
-            if (grounded) _usedSinceLastLanding = false;
+            if (grounded && !IsHolding) _timer = 0f;
 
             // Começou a segurar
-            if (!_usedSinceLastLanding && jumpHeld && !grounded &&
-                touchingSurface && !IsHolding)
+            if (jumpHeld && !grounded &&
+                touchingSurface && !IsHolding && _timer < holdTime)
             {
                 IsHolding = true;
-                _usedSinceLastLanding = true;
                 _rb.angularVelocity = 0f;
                 _rb.bodyType = RigidbodyType2D.Static;
-                _timer = 0f;
             }
 
             // Soltou
@@ -49,10 +46,15 @@ namespace Rooftop.Core.Abilities
             }
         }
 
+        public void Reset()
+        {
+            IsHolding = false;
+            _timer = 0f;
+        }
+
         private void Release()
         {
             IsHolding = false;
-            _timer = 0;
 
             _rb.bodyType = RigidbodyType2D.Dynamic;
         }

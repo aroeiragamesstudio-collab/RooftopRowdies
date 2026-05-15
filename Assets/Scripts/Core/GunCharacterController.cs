@@ -39,6 +39,7 @@ public class GunCharacterController : MonoBehaviour
     Rigidbody2D rb;
     InputAction moveAction;
     InputAction waitAction;
+    InputAction ropeAdjustAction;
     bool falling;
     [HideInInspector]
     public bool absorbed;
@@ -61,6 +62,7 @@ public class GunCharacterController : MonoBehaviour
 
         moveAction = playerInput.currentActionMap.FindAction("Move");
         waitAction = playerInput.currentActionMap.FindAction("Wait");
+        ropeAdjustAction = playerInput.currentActionMap.FindAction("RopeAdjust");
 
         rope = paws.GetComponent<RopeSystem>();
 
@@ -89,7 +91,7 @@ public class GunCharacterController : MonoBehaviour
                 RopeAdjustCondition.Never => false,
                 _ => false
             };
-            if (canAdjust) rope.TryAdjust(moveInput.y);
+            if (canAdjust) rope.TryAdjust(ropeAdjustAction?.ReadValue<float>() ?? 0f);
             rope.HandleRopeTautPenalty();
         }
 
