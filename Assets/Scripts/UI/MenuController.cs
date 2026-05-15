@@ -1,4 +1,7 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.InputSystem.UI;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 /// <summary>
@@ -52,10 +55,14 @@ public class MenuController : MonoBehaviour
 
         instance = this;
         DontDestroyOnLoad(this);
+
+        SceneManager.sceneLoaded += OnSceneLoaded;
     }
 
     void Start()
     {
+        UIPanelStack.ForceReset();
+
         // Estado inicial: todos desativados, depois empilhamos o main menu
         // (a pilha vai cuidar de ativar e selecionar).
         if (confirmMessage != null) confirmMessage.SetActive(false);
@@ -63,16 +70,14 @@ public class MenuController : MonoBehaviour
         if (optionsMenu != null) optionsMenu.SetActive(false);
         if (mainMenu != null) mainMenu.SetActive(false);
 
-        // Pilha começa limpa e empurra o main menu como base.
-        UIPanelStack.Clear();
-        if (mainMenu != null)
-            UIPanelStack.Push(mainMenu, firstSelectedInMainMenu);
-
         startBtn.onClick.AddListener(GoToLobby);
         quitBtn.onClick.AddListener(QuitBtn);
         confirmQuitBtn.onClick.AddListener(ConfirmQuit);
         cancelBtn.onClick.AddListener(Cancel);
         optionsBtn.onClick.AddListener(OpenOptions);
+
+        if (mainMenu != null)
+            UIPanelStack.Push(mainMenu, firstSelectedInMainMenu);
     }
 
     public void GoToLobby()
@@ -96,8 +101,7 @@ public class MenuController : MonoBehaviour
     {
         // Voltando do gameplay para o menu — reseta tudo e empilha o main menu novamente.
         UIPanelStack.Clear();
-        if (mainMenu != null)
-            UIPanelStack.Push(mainMenu, firstSelectedInMainMenu);
+        UIPanelStack.Push(mainMenu, firstSelectedInMainMenu);
     }
 
     public void OpenOptions()
@@ -145,8 +149,47 @@ public class MenuController : MonoBehaviour
         UIPanelStack.Pop();
     }
 
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        // Only act if the loaded scene is the menu scene.
+        // Replace "MenuScene" with your actual scene name.
+        if (scene.name != "MenuScene") return;
+
+        // Give the new EventSystem one frame to initialize before selecting.
+        StartCoroutine(SelectAfterDelay());
+    }
+
+    private System.Collections.IEnumerator SelectAfterDelay()
+    {
+        yield return null;
+
+        // Find the NEW scene's InputSystemUIInputModule and toggle it.
+        // This forces it to re-resolve and re-enable all its action references.
+        var uiModule = FindFirstObjectByType<InputSystemUIInputModule>();
+        if (uiModule != null)
+        {
+            uiModule.enabled = false;
+            uiModule.enabled = true;
+        }
+
+        // Now that the module is alive, make sure the EventSystem has a selection
+        // so gamepad/keyboard navigation has an anchor point.
+        if (UIPanelStack.Top != null)
+        {
+            var es = UnityEngine.EventSystems.EventSystem.current;
+            if (es != null && es.currentSelectedGameObject == null)
+            {
+                // Re-select whatever the stack thinks should be focused
+                var selectable = UIPanelStack.Top.GetComponentInChildren<UnityEngine.UI.Selectable>(false);
+                if (selectable != null && selectable.IsInteractable())
+                    es.SetSelectedGameObject(selectable.gameObject);
+            }
+        }
+    }
+
     private void OnDestroy()
     {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
         if (startBtn != null) startBtn.onClick.RemoveAllListeners();
         if (quitBtn != null) quitBtn.onClick.RemoveAllListeners();
         if (confirmQuitBtn != null) confirmQuitBtn.onClick.RemoveAllListeners();

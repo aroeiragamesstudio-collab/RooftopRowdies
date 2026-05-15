@@ -151,4 +151,9 @@ public static class UIPanelStack
         }
         return null;
     }
+
+    public static void ForceReset()
+    {
+        _stack.Clear();
+    }
 }

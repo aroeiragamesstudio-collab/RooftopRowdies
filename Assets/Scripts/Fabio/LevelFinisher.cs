@@ -22,6 +22,7 @@ public class LevelFinisher : MonoBehaviour
 
     [Header("Referência da UI")]
     public LevelCompleteUI levelCompleteUI;
+    public Canvas correctCanvas;
 
     [Header("Próxima Cena")]
     [Tooltip("Nome da próxima cena. Se vazio, carrega a próxima do Build Settings.")]
@@ -132,7 +133,7 @@ public class LevelFinisher : MonoBehaviour
 
     private void CreateBlackOverlay()
     {
-        Canvas canvas = FindFirstObjectByType<Canvas>();
+        Canvas canvas = correctCanvas;
         if (canvas == null)
         {
             GameObject cgo = new GameObject("Canvas_BlackFade");

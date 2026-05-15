@@ -10,11 +10,11 @@ GameObject:
   m_Component:
   - component: {fileID: 5867335715226277767}
   - component: {fileID: 1112273706791065528}
-  - component: {fileID: 3539429936041892586}
   - component: {fileID: 8725384248250218035}
   - component: {fileID: 7072171812833905426}
   - component: {fileID: 2640800705571640124}
   - component: {fileID: 8323727154950466415}
+  - component: {fileID: 1952477755681867847}
   m_Layer: 0
   m_Name: GunCharacter
   m_TagString: Untagged
@@ -88,7 +88,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_Sprite: {fileID: -2413806693520163455, guid: a86470a33a6bf42c4b3595704624658b, type: 3}
+  m_Sprite: {fileID: -9095717837082945937, guid: 207ee8102dd4143d288186ef0be518ee, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -98,42 +98,6 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
---- !u!58 &3539429936041892586
-CircleCollider2D:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1113393193735310004}
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Density: 1
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_ForceSendLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_ForceReceiveLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_ContactCaptureLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_CallbackLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_IsTrigger: 0
-  m_UsedByEffector: 0
-  m_CompositeOperation: 0
-  m_CompositeOrder: 0
-  m_Offset: {x: 0, y: 0}
-  m_Radius: 0.5
 --- !u!50 &8725384248250218035
 Rigidbody2D:
   serializedVersion: 5
@@ -299,6 +263,14 @@ MonoBehaviour:
       m_Calls: []
     m_ActionId: 724e9197-4dc2-4b08-8287-037eceb56055
     m_ActionName: 'UI/Pause[/Keyboard/escape,/Keyboard/numpadEnter]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: e3cba613-4a52-48fb-8d4d-a3cda135a5fa
+    m_ActionName: 'JumpPlayer/RopeAdjust[/Keyboard/q,/Keyboard/e,/Keyboard/numpadMinus,/Keyboard/numpadPlus,/DualSenseGamepadHID/leftShoulder,/DualSenseGamepadHID/rightShoulder]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 59a01288-add3-4659-b658-c4086b9d3416
+    m_ActionName: 'GunPlayer/RopeAdjust[/Keyboard/q,/Keyboard/e,/Keyboard/numpadMinus,/Keyboard/numpadPlus,/DualSenseGamepadHID/leftShoulder,/DualSenseGamepadHID/rightShoulder]'
   m_NeverAutoSwitchControlSchemes: 1
   m_DefaultControlScheme: Gamepad
   m_DefaultActionMap: GunPlayer
@@ -324,6 +296,43 @@ DistanceJoint2D:
   m_AutoConfigureDistance: 0
   m_Distance: 5
   m_MaxDistanceOnly: 1
+--- !u!70 &1952477755681867847
+CapsuleCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1113393193735310004}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_IsTrigger: 0
+  m_UsedByEffector: 0
+  m_CompositeOperation: 0
+  m_CompositeOrder: 0
+  m_Offset: {x: 0, y: 0}
+  m_Size: {x: 1, y: 2}
+  m_Direction: 0
 --- !u!1 &2444841160032586762
 GameObject:
   m_ObjectHideFlags: 0
@@ -440,7 +449,7 @@ Transform:
   m_GameObject: {fileID: 6864123933787173624}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -0.5, z: 0}
+  m_LocalPosition: {x: 0, y: -0.976, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -512,6 +521,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ab1c8067a86ee3944bb321ddbc3b4408, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AbsorbShootSystem
+  absorbableStates: 7
   absorbDistance: 2
   aimTolerance: 0.8
   shootForce: 13

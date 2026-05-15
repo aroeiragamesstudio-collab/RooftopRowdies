@@ -68,6 +68,29 @@ public class LobbyManager : MonoBehaviour
             MultiplayerSessionData.Instance.Reset();
     }
 
+    private void OnEnable()
+    {
+        // Fires every time the lobby panel (or this GameObject) is activated.
+        // Guarantees a clean state on every lobby entry, including returns from gameplay.
+        slots[0] = new LobbySlot { index = 0 };
+        slots[1] = new LobbySlot { index = 1 };
+        joinedCount = 0;
+        registeredDeviceIds.Clear();
+        registeredKeyboardSchemes.Clear();
+
+        if (MultiplayerSessionData.Instance == null)
+        {
+            GameObject go = new GameObject("MultiplayerSessionData");
+            go.AddComponent<MultiplayerSessionData>();
+        }
+        else
+        {
+            MultiplayerSessionData.Instance.Reset();
+        }
+
+        RefreshAllUI();
+    }
+
     private void Start()
     {
         RefreshAllUI();

@@ -560,7 +560,7 @@ MonoBehaviour:
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1764690841}
+      - m_Target: {fileID: 600470129}
         m_TargetAssemblyTypeName: SettingsMenu, Assembly-CSharp
         m_MethodName: SetMusicVolume
         m_Mode: 0
@@ -711,7 +711,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1764690841}
+      - m_Target: {fileID: 600470129}
         m_TargetAssemblyTypeName: SettingsMenu, Assembly-CSharp
         m_MethodName: SwitchTab
         m_Mode: 3
@@ -1485,7 +1485,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1764690841}
+      - m_Target: {fileID: 600470129}
         m_TargetAssemblyTypeName: SettingsMenu, Assembly-CSharp
         m_MethodName: SwitchTab
         m_Mode: 3
@@ -1691,7 +1691,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1764690840}
+      - m_Target: {fileID: 600470130}
         m_TargetAssemblyTypeName: MenuController, Assembly-CSharp
         m_MethodName: ConfirmQuit
         m_Mode: 1
@@ -1899,6 +1899,111 @@ MonoBehaviour:
   m_FlexibleWidth: -1
   m_FlexibleHeight: -1
   m_LayoutPriority: 1
+--- !u!1 &600470127
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 600470131}
+  - component: {fileID: 600470130}
+  - component: {fileID: 600470129}
+  - component: {fileID: 600470128}
+  m_Layer: 0
+  m_Name: Controller
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &600470128
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 600470127}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0b2f363a6d3426e4788fea99c1eab7b1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ResolutionManager
+  resolutionDropdown: {fileID: 8420773746858846478}
+--- !u!114 &600470129
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 600470127}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bed360080cdf9fb4b987214c9cd1a667, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SettingsMenu
+  audioMixer: {fileID: 24100000, guid: 9aca518a641683c48b7eb5a270f7ea21, type: 2}
+  tabPanels:
+  - {fileID: 671454189}
+  - {fileID: 6902535365733079359}
+  tabButtons:
+  - {fileID: 1525841898}
+  - {fileID: 260967423}
+  - {fileID: 408271909}
+  activeTabColor: {r: 1, g: 1, b: 1, a: 1}
+  inactiveTabColor: {r: 0.6, g: 0.6, b: 0.6, a: 1}
+  masterVolumeSlider: {fileID: 1159206758939212591}
+  musicVolumeSlider: {fileID: 189946022}
+  sfxVolumeSlider: {fileID: 791986300}
+  fullscreenToggle: {fileID: 5857467810641431535}
+  rumbleToggle: {fileID: 0}
+  cameraShakeToggle: {fileID: 0}
+  colorblindToggle: {fileID: 0}
+  isFullscreen: 1
+  isRumbleEnabled: 0
+  isCameraShakeEnabled: 0
+  isColorblindMode: 0
+--- !u!114 &600470130
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 600470127}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d52c2840f47d4a34ebeae2b354a4131c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MenuController
+  mainMenu: {fileID: 1236251619}
+  confirmMessage: {fileID: 349924368}
+  optionsMenu: {fileID: 335472900}
+  lobby: {fileID: 1636714084}
+  firstSelectedInMainMenu: {fileID: 1313919518}
+  firstSelectedInConfirm: {fileID: 1792599408}
+  firstSelectedInOptions: {fileID: 1525841897}
+  startBtn: {fileID: 1313919521}
+  optionsBtn: {fileID: 1309914031}
+  quitBtn: {fileID: 1037375311}
+  confirmQuitBtn: {fileID: 416408318}
+  cancelBtn: {fileID: 1792599411}
+--- !u!4 &600470131
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 600470127}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 960, y: 540, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1764690839}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &671454189
 GameObject:
   m_ObjectHideFlags: 0
@@ -2228,7 +2333,7 @@ MonoBehaviour:
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1764690841}
+      - m_Target: {fileID: 600470129}
         m_TargetAssemblyTypeName: SettingsMenu, Assembly-CSharp
         m_MethodName: SetSFXVolume
         m_Mode: 0
@@ -2440,7 +2545,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 76c392e42b5098c458856cdf6ecaaaa1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.EventSystems.EventSystem
-  m_FirstSelected: {fileID: 1313919518}
+  m_FirstSelected: {fileID: 0}
   m_sendNavigationEvents: 1
   m_DragThreshold: 10
 --- !u!4 &857334323
@@ -2451,7 +2556,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 857334320}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -3085,7 +3190,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1764690840}
+      - m_Target: {fileID: 600470130}
         m_TargetAssemblyTypeName: MenuController, Assembly-CSharp
         m_MethodName: QuitBtn
         m_Mode: 1
@@ -4216,7 +4321,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1764690840}
+      - m_Target: {fileID: 600470130}
         m_TargetAssemblyTypeName: MenuController, Assembly-CSharp
         m_MethodName: OpenOptions
         m_Mode: 1
@@ -4376,9 +4481,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1764690840}
+      - m_Target: {fileID: 600470130}
         m_TargetAssemblyTypeName: MenuController, Assembly-CSharp
-        m_MethodName: GoToGame
+        m_MethodName: GoToLobby
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -5337,7 +5442,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1764690841}
+      - m_Target: {fileID: 600470129}
         m_TargetAssemblyTypeName: SettingsMenu, Assembly-CSharp
         m_MethodName: SwitchTab
         m_Mode: 3
@@ -5816,6 +5921,7 @@ GameObject:
   - component: {fileID: 1636714085}
   - component: {fileID: 1636714087}
   - component: {fileID: 1636714086}
+  - component: {fileID: 1636714088}
   m_Layer: 5
   m_Name: LobbyPanel
   m_TagString: Untagged
@@ -5884,6 +5990,28 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1636714084}
   m_CullTransparentMesh: 1
+--- !u!114 &1636714088
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1636714084}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e13c90dbc078f754f9f48af537c61485, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LobbyManager
+  gameplaySceneName: LevelDesign
+  player1StatusText: {fileID: 1417669404}
+  player1DeviceText: {fileID: 366458336}
+  player1CharacterText: {fileID: 1404289678}
+  player1ConfirmedBadge: {fileID: 54126192}
+  player2StatusText: {fileID: 1307906019}
+  player2DeviceText: {fileID: 1506074436}
+  player2CharacterText: {fileID: 1374413655}
+  player2ConfirmedBadge: {fileID: 1549729049}
+  globalMessageText: {fileID: 1063708737}
 --- !u!1 &1643349192
 GameObject:
   m_ObjectHideFlags: 0
@@ -6223,9 +6351,6 @@ GameObject:
   - component: {fileID: 1764690838}
   - component: {fileID: 1764690837}
   - component: {fileID: 1764690836}
-  - component: {fileID: 1764690840}
-  - component: {fileID: 1764690841}
-  - component: {fileID: 1764690842}
   m_Layer: 5
   m_Name: Canvas
   m_TagString: Untagged
@@ -6312,83 +6437,13 @@ RectTransform:
   - {fileID: 349924369}
   - {fileID: 1636714085}
   - {fileID: 335472901}
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 600470131}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
---- !u!114 &1764690840
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1764690835}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d52c2840f47d4a34ebeae2b354a4131c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::MenuController
-  mainMenu: {fileID: 1236251619}
-  confirmMessage: {fileID: 349924368}
-  optionsMenu: {fileID: 335472900}
-  lobby: {fileID: 1636714084}
-  firstSelectedInMainMenu: {fileID: 1313919518}
-  firstSelectedInConfirm: {fileID: 1792599408}
-  firstSelectedInOptions: {fileID: 1525841897}
-  startBtn: {fileID: 1313919521}
-  optionsBtn: {fileID: 1309914031}
-  quitBtn: {fileID: 1037375311}
-  confirmQuitBtn: {fileID: 416408318}
-  cancelBtn: {fileID: 1792599411}
---- !u!114 &1764690841
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1764690835}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bed360080cdf9fb4b987214c9cd1a667, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SettingsMenu
-  audioMixer: {fileID: 24100000, guid: 9aca518a641683c48b7eb5a270f7ea21, type: 2}
-  tabPanels:
-  - {fileID: 671454189}
-  - {fileID: 6902535365733079359}
-  tabButtons:
-  - {fileID: 1525841898}
-  - {fileID: 260967423}
-  - {fileID: 408271909}
-  activeTabColor: {r: 1, g: 1, b: 1, a: 1}
-  inactiveTabColor: {r: 0.6, g: 0.6, b: 0.6, a: 1}
-  masterVolumeSlider: {fileID: 1159206758939212591}
-  musicVolumeSlider: {fileID: 189946022}
-  sfxVolumeSlider: {fileID: 791986300}
-  fullscreenToggle: {fileID: 5857467810641431535}
-  rumbleToggle: {fileID: 0}
-  cameraShakeToggle: {fileID: 0}
-  colorblindToggle: {fileID: 0}
-  isFullscreen: 1
-  isRumbleEnabled: 0
-  isCameraShakeEnabled: 0
-  isColorblindMode: 0
---- !u!114 &1764690842
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1764690835}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0b2f363a6d3426e4788fea99c1eab7b1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ResolutionManager
-  resolutionDropdown: {fileID: 8420773746858846478}
 --- !u!1 &1792599408
 GameObject:
   m_ObjectHideFlags: 0
@@ -6499,7 +6554,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1764690840}
+      - m_Target: {fileID: 600470130}
         m_TargetAssemblyTypeName: MenuController, Assembly-CSharp
         m_MethodName: Cancel
         m_Mode: 1
@@ -7131,60 +7186,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2051606338}
   m_CullTransparentMesh: 1
---- !u!1 &2055321679
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2055321680}
-  - component: {fileID: 2055321681}
-  m_Layer: 0
-  m_Name: LobbyManager
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &2055321680
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2055321679}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2055321681
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2055321679}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e13c90dbc078f754f9f48af537c61485, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::LobbyManager
-  gameplaySceneName: LevelDesign
-  player1StatusText: {fileID: 1417669404}
-  player1DeviceText: {fileID: 366458336}
-  player1CharacterText: {fileID: 1404289678}
-  player1ConfirmedBadge: {fileID: 54126192}
-  player2StatusText: {fileID: 1307906019}
-  player2DeviceText: {fileID: 1506074436}
-  player2CharacterText: {fileID: 1374413655}
-  player2ConfirmedBadge: {fileID: 1549729049}
-  globalMessageText: {fileID: 1063708737}
 --- !u!1 &2062969412
 GameObject:
   m_ObjectHideFlags: 0
@@ -7711,7 +7712,7 @@ MonoBehaviour:
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1764690841}
+      - m_Target: {fileID: 600470129}
         m_TargetAssemblyTypeName: SettingsMenu, Assembly-CSharp
         m_MethodName: SetMasterVolume
         m_Mode: 0
@@ -7978,7 +7979,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1764690841}
+      - m_Target: {fileID: 600470129}
         m_TargetAssemblyTypeName: SettingsMenu, Assembly-CSharp
         m_MethodName: SaveAndClose
         m_Mode: 1
@@ -8973,7 +8974,7 @@ MonoBehaviour:
   onValueChanged:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1764690841}
+      - m_Target: {fileID: 600470129}
         m_TargetAssemblyTypeName: SettingsMenu, Assembly-CSharp
         m_MethodName: SetFullscreen
         m_Mode: 0
@@ -9775,7 +9776,7 @@ MonoBehaviour:
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1764690842}
+      - m_Target: {fileID: 600470128}
         m_TargetAssemblyTypeName: ResolutionManager, Assembly-CSharp
         m_MethodName: OnDropdownChanged
         m_Mode: 0
@@ -9926,7 +9927,6 @@ SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
   - {fileID: 1249341664}
-  - {fileID: 1764690839}
+  - {fileID: 600470131}
   - {fileID: 857334323}
   - {fileID: 1714430013}
-  - {fileID: 2055321680}
