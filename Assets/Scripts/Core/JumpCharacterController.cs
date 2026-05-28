@@ -1,8 +1,6 @@
 using Rooftop.Core.Abilities;
-using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using static UnityEditor.ShaderData;
 
 /// <summary>
 /// Script principal do personagem gato/que pula, sendo aqui a maioria das mudanças dele
@@ -122,7 +120,7 @@ public class JumpCharacterController : MonoBehaviour
         if (moveInput.x != 0)
             lastHorizontalDir = Mathf.Sign(moveInput.x);
 
-        if(rope != null)
+        if (rope != null)
         {
             bool canAdjust = ropeAdjustCondition switch
             {
@@ -179,7 +177,7 @@ public class JumpCharacterController : MonoBehaviour
                 break;
             case CharacterState.Swinging:
                 rb.linearDamping = swingDamping;
-                if(porky.IsKinematic() && !OnGround())
+                if (porky.IsKinematic() && !OnGround())
                     RopeSystem.ApplyPendulumForce(rb, porky.transform.position,
                     moveInput.x, originalSpeed);
 
@@ -200,7 +198,7 @@ public class JumpCharacterController : MonoBehaviour
             case CharacterState.Absorbed:
                 break;
             case CharacterState.Flying:
-                if(moveInput.x != 0)
+                if (moveInput.x != 0)
                     rb.linearVelocityX = moveInput.x * originalSpeed;
                 else
                     rb.linearVelocityX = lastHorizontalDir * flight.FlightSpeed;
