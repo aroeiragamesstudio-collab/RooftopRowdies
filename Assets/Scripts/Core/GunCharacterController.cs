@@ -199,5 +199,10 @@ public class GunCharacterController : MonoBehaviour
         }
     }
 
+    public void AddForce(float forceToAdd)
+    {
+        rb.linearVelocity = Vector2.up * forceToAdd;
+    }
+
     public bool IsAllyAbsorbed => absorbed;
 }

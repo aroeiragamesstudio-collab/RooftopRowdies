@@ -332,6 +332,11 @@ public class JumpCharacterController : MonoBehaviour
         }
     }
 
+    public void AddForce(float forceToAdd)
+    {
+        rb.linearVelocity = Vector2.up * forceToAdd;
+    }
+
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.green;
