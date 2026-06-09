@@ -149,7 +149,8 @@ public class MenuController : MonoBehaviour
             Debug.LogWarning("[MenuController] confirmMessage não está atribuído.");
             return;
         }
-        confirmMessage.SetActive(true);
+
+        UIPanelStack.PushOverlay(confirmMessage, firstSelectedInConfirm);
     }
 
     public void ConfirmQuit()
@@ -164,7 +165,7 @@ public class MenuController : MonoBehaviour
     public void Cancel()
     {
         // Cancela a confirmação — pop volta ao main menu.
-        confirmMessage.SetActive(true);
+        UIPanelStack.Pop();
     }
 
     private void OnDestroy()

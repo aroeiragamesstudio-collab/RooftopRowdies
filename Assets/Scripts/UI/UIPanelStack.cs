@@ -4,31 +4,36 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 /// <summary>
-/// Pilha global de painéis de UI. Resolve o problema clássico de "menus em camadas":
-/// quando você abre um painel novo (ex: Options) por cima de outro (ex: Pause), o
-/// painel anterior tem que SAIR, mas voltar exatamente como estava — incluindo o
-/// item que o player tinha selecionado — quando o de cima fecha.
+/// Pilha global de painéis de UI.
 ///
-/// Por que uma pilha em vez de um sistema ad-hoc?
-///   - Cada Open empurra o painel atual e seu item selecionado para a pilha.
-///   - Cada Close pega o último e restaura tudo. Ordem garantida.
-///   - Funciona com QUALQUER quantidade de níveis (Pause → Options → "Tem certeza?"
-///     → ... ) sem precisar reescrever lógica para cada combinação.
-///   - Resolve o bug "EventSystem perde a seleção": ao desativar o painel atual,
-///     a gente PRIMEIRO limpa a seleção pra null, DEPOIS desativa, DEPOIS seleciona
-///     o novo item no painel novo. Sem essa ordem, o EventSystem fica olhando pra
-///     um GameObject inativo e perde a navegação.
+/// Dois modos de empilhamento:
 ///
-/// Uso:
-///   UIPanelStack.Push(optionsPanel, optionsFirstButton);    // abre options
-///   UIPanelStack.Pop();                                      // fecha options, volta o pause
+///   Push(panel, firstSelected)
+///     Modo padrão — o painel anterior é DESATIVADO e guardado. Use para
+///     navegação profunda onde o painel de baixo não deve ser visível
+///     (ex: Pause → Options).
+///
+///   PushOverlay(panel, firstSelected)
+///     Modo sobreposição — o painel anterior PERMANECE ATIVO e visível, mas
+///     tem sua interatividade desabilitada via CanvasGroup. Use para diálogos
+///     de confirmação que devem aparecer sobre o painel atual sem escondê-lo
+///     (ex: "Tem certeza que quer sair?").
+///
+/// Pop() funciona para ambos os modos: detecta pelo flag isOverlay e age
+/// de forma adequada (reativa interatividade em vez de reativar o objeto).
 /// </summary>
 public static class UIPanelStack
 {
     private struct PanelLayer
     {
         public GameObject panel;
-        public GameObject lastSelected;  // o que estava selecionado quando empilhamos
+        public GameObject lastSelected;
+        /// <summary>
+        /// True se este painel foi aberto como overlay (o painel abaixo ficou
+        /// visível mas não-interativo). Pop restaura interatividade em vez de
+        /// reativar SetActive.
+        /// </summary>
+        public bool isOverlay;
     }
 
     private static readonly Stack<PanelLayer> _stack = new Stack<PanelLayer>();
@@ -39,10 +44,14 @@ public static class UIPanelStack
     /// <summary>O painel no topo (visível) ou null se a pilha está vazia.</summary>
     public static GameObject Top => _stack.Count > 0 ? _stack.Peek().panel : null;
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // Push — o painel anterior É desativado (navegação profunda)
+    // ─────────────────────────────────────────────────────────────────────────
+
     /// <summary>
-    /// Abre 'newPanel' por cima do que estiver no topo. O painel antigo é desativado
-    /// e seu item selecionado é guardado para restaurar depois. O 'firstSelected' do
-    /// novo painel é focado automaticamente.
+    /// Abre 'newPanel' por cima do que estiver no topo. O painel antigo é
+    /// desativado e seu item selecionado é guardado para restaurar depois.
+    /// Use para navegação onde o painel de baixo não precisa ser visível.
     /// </summary>
     public static void Push(GameObject newPanel, GameObject firstSelected = null)
     {
@@ -52,46 +61,92 @@ public static class UIPanelStack
             return;
         }
 
-        // 1. Captura quem está no topo agora (se houver) e a seleção atual.
         if (_stack.Count > 0)
         {
-            PanelLayer current = _stack.Peek();
-            // Atualiza o lastSelected do topo com o que está realmente selecionado AGORA
-            // (o usuário pode ter navegado desde o Push original).
-            GameObject currentlySelected = EventSystem.current != null
-                ? EventSystem.current.currentSelectedGameObject
-                : null;
+            SaveCurrentSelection();
 
-            if (currentlySelected != null)
-            {
-                _stack.Pop();
-                current.lastSelected = currentlySelected;
-                _stack.Push(current);
-            }
-
-            // Limpa a seleção ANTES de desativar o painel — sem isso o EventSystem
-            // segura uma referência a um GameObject que está ficando inativo, e a
-            // navegação quebra silenciosamente.
             if (EventSystem.current != null)
                 EventSystem.current.SetSelectedGameObject(null);
 
-            current.panel.SetActive(false);
+            // Desativa o painel do topo (comportamento normal).
+            _stack.Peek().panel.SetActive(false);
         }
 
-        // 2. Empilha e ativa o novo.
         newPanel.SetActive(true);
-        _stack.Push(new PanelLayer { panel = newPanel, lastSelected = firstSelected });
+        _stack.Push(new PanelLayer
+        {
+            panel = newPanel,
+            lastSelected = firstSelected,
+            isOverlay = false
+        });
 
-        // 3. Seleciona o primeiro item do novo painel.
-        // Resolve automaticamente se o caller não passou um.
-        GameObject toSelect = firstSelected != null ? firstSelected : FindFirstSelectableIn(newPanel);
-        if (toSelect != null && EventSystem.current != null)
-            EventSystem.current.SetSelectedGameObject(toSelect);
+        FocusFirst(firstSelected ?? FindFirstSelectableIn(newPanel));
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // PushOverlay — o painel anterior PERMANECE visível mas não-interativo
+    // ─────────────────────────────────────────────────────────────────────────
+
     /// <summary>
-    /// Fecha o painel do topo e restaura o anterior. Volta a seleção exatamente para
-    /// onde o usuário estava (last selected do nível anterior).
+    /// Abre 'newPanel' como sobreposição: o painel abaixo continua visível,
+    /// mas tem interatividade bloqueada via CanvasGroup. Use para diálogos de
+    /// confirmação que devem aparecer "em cima" sem esconder o conteúdo de baixo.
+    ///
+    /// REQUISITO: o painel abaixo precisa ter um CanvasGroup. Se não tiver,
+    /// um aviso é logado e a interatividade não pode ser bloqueada corretamente
+    /// (o Push() normal é mais seguro nesse caso).
+    /// </summary>
+    public static void PushOverlay(GameObject newPanel, GameObject firstSelected = null)
+    {
+        if (newPanel == null)
+        {
+            Debug.LogError("[UIPanelStack] PushOverlay chamado com newPanel = null.");
+            return;
+        }
+
+        if (_stack.Count > 0)
+        {
+            SaveCurrentSelection();
+
+            if (EventSystem.current != null)
+                EventSystem.current.SetSelectedGameObject(null);
+
+            // Bloqueia interatividade do painel abaixo — mas NÃO desativa.
+            GameObject below = _stack.Peek().panel;
+            CanvasGroup cg = below.GetComponent<CanvasGroup>();
+            if (cg != null)
+            {
+                cg.interactable = false;
+                cg.blocksRaycasts = false;
+            }
+            else
+            {
+                Debug.LogWarning($"[UIPanelStack] PushOverlay: '{below.name}' não tem CanvasGroup. " +
+                                 "A interatividade abaixo não será bloqueada. " +
+                                 "Adicione um CanvasGroup ao painel para evitar cliques fantasmas.");
+            }
+        }
+
+        newPanel.SetActive(true);
+        _stack.Push(new PanelLayer
+        {
+            panel = newPanel,
+            lastSelected = firstSelected,
+            isOverlay = true
+        });
+
+        FocusFirst(firstSelected ?? FindFirstSelectableIn(newPanel));
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Pop — fecha o topo e restaura o estado do painel abaixo
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Fecha o painel do topo e restaura o anterior. Detecta automaticamente
+    /// se o painel fechado era um overlay ou não, e age de forma adequada:
+    ///   - Overlay: reativa interatividade do painel abaixo (que nunca foi desativado).
+    ///   - Normal: reativa SetActive do painel abaixo.
     /// </summary>
     public static void Pop()
     {
@@ -103,30 +158,52 @@ public static class UIPanelStack
 
         PanelLayer top = _stack.Pop();
 
-        // Limpa a seleção primeiro, depois desativa.
         if (EventSystem.current != null)
             EventSystem.current.SetSelectedGameObject(null);
 
         if (top.panel != null) top.panel.SetActive(false);
 
-        // Restaura o painel anterior, se houver.
         if (_stack.Count > 0)
         {
             PanelLayer previous = _stack.Peek();
-            if (previous.panel != null) previous.panel.SetActive(true);
 
-            GameObject toSelect = previous.lastSelected != null && previous.lastSelected.activeInHierarchy
+            if (top.isOverlay)
+            {
+                // O painel abaixo nunca foi desativado — só restaura interatividade.
+                CanvasGroup cg = previous.panel != null
+                    ? previous.panel.GetComponent<CanvasGroup>()
+                    : null;
+
+                if (cg != null)
+                {
+                    cg.interactable = true;
+                    cg.blocksRaycasts = true;
+                }
+                // O painel já está ativo, então não chamamos SetActive(true).
+            }
+            else
+            {
+                // Push normal — reativa o painel.
+                if (previous.panel != null) previous.panel.SetActive(true);
+            }
+
+            GameObject toSelect = previous.lastSelected != null
+                                  && previous.lastSelected.activeInHierarchy
                 ? previous.lastSelected
                 : FindFirstSelectableIn(previous.panel);
 
-            if (toSelect != null && EventSystem.current != null)
-                EventSystem.current.SetSelectedGameObject(toSelect);
+            FocusFirst(toSelect);
         }
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // Clear / ForceReset
+    // ─────────────────────────────────────────────────────────────────────────
+
     /// <summary>
-    /// Esvazia a pilha desativando todos os painéis. Útil quando você sai pra menu
-    /// principal ou recarrega a cena e quer um estado limpo.
+    /// Esvazia a pilha desativando todos os painéis e restaurando os
+    /// CanvasGroups de painéis que estavam bloqueados como overlay.
+    /// Útil quando você sai para o menu principal ou recarrega a cena.
     /// </summary>
     public static void Clear()
     {
@@ -136,8 +213,64 @@ public static class UIPanelStack
         while (_stack.Count > 0)
         {
             PanelLayer layer = _stack.Pop();
-            if (layer.panel != null) layer.panel.SetActive(false);
+            if (layer.panel == null) continue;
+
+            // Se era overlay o CanvasGroup pode estar com interactable=false —
+            // restauramos antes de desativar para não deixar o objeto num estado
+            // bloqueado caso ele seja reutilizado depois.
+            CanvasGroup cg = layer.panel.GetComponent<CanvasGroup>();
+            if (cg != null)
+            {
+                cg.interactable = true;
+                cg.blocksRaycasts = true;
+            }
+
+            layer.panel.SetActive(false);
         }
+    }
+
+    /// <summary>
+    /// Força o reset da pilha SEM chamar SetActive nos painéis.
+    /// Use apenas quando os painéis já foram destruídos ou quando a cena
+    /// acabou de ser carregada e o estado anterior da pilha estática é inválido.
+    /// (A pilha é estática, então sobrevive entre cenas — ForceReset limpa
+    /// referências antigas sem tentar acessar GameObjects que não existem mais.)
+    /// </summary>
+    public static void ForceReset()
+    {
+        _stack.Clear();
+
+        if (EventSystem.current != null)
+            EventSystem.current.SetSelectedGameObject(null);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Helpers privados
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Atualiza o lastSelected do topo da pilha com o que está realmente
+    /// selecionado agora (o usuário pode ter navegado desde o Push original).
+    /// </summary>
+    private static void SaveCurrentSelection()
+    {
+        if (_stack.Count == 0) return;
+
+        GameObject currentlySelected = EventSystem.current != null
+            ? EventSystem.current.currentSelectedGameObject
+            : null;
+
+        if (currentlySelected == null) return;
+
+        PanelLayer current = _stack.Pop();
+        current.lastSelected = currentlySelected;
+        _stack.Push(current);
+    }
+
+    private static void FocusFirst(GameObject target)
+    {
+        if (target != null && EventSystem.current != null)
+            EventSystem.current.SetSelectedGameObject(target);
     }
 
     private static GameObject FindFirstSelectableIn(GameObject root)
@@ -150,10 +283,5 @@ public static class UIPanelStack
                 return s.gameObject;
         }
         return null;
-    }
-
-    public static void ForceReset()
-    {
-        _stack.Clear();
     }
 }

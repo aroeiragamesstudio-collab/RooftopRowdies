@@ -43,6 +43,10 @@ public class PauseManager : MonoBehaviour
     [SerializeField] GameObject pausePanel;
     [Tooltip("Primeiro botão a ser focado quando o menu abre (necessário para gamepad/teclado).")]
     [SerializeField] GameObject firstSelectedOnPause;
+    [Tooltip("Painel de confirmação de saída do jogo (fica sobre o pausePanel como overlay).")]
+    [SerializeField] GameObject quitConfirmPanel;
+    [Tooltip("Primeiro botão focado no painel de confirmação (prefira o botão Cancel por segurança).")]
+    [SerializeField] GameObject firstSelectedOnQuitConfirm;
 
     [Header("Cena do menu principal")]
     [Tooltip("Nome exato da cena do menu (em File > Build Settings).")]
@@ -634,6 +638,37 @@ public class PauseManager : MonoBehaviour
                              "A cena de gameplay foi iniciada sem passar pelo menu? " +
                              "Considere adicionar um fallback (ex: instanciar um prefab do menu de opções).");
         }
+    }
+
+    public void OnExitButton()
+    {
+        if (quitConfirmPanel == null)
+        {
+            Debug.LogWarning("[PauseManager] quitConfirmPanel não está atribuído. " +
+                             "Crie um painel de confirmação e arraste para o campo no Inspector.");
+            return;
+        }
+
+        UIPanelStack.PushOverlay(quitConfirmPanel, firstSelectedOnQuitConfirm);
+    }
+
+    public void OnCancelQuit()
+    {
+        // Pop remove o quitConfirmPanel e restaura interatividade do pausePanel
+        // automaticamente (PushOverlay + Pop se cancelam).
+        UIPanelStack.Pop();
+    }
+
+    /// <summary>
+    /// Confirma a saída do jogo. Em editor, para o play mode; em build, fecha o app.
+    /// </summary>
+    public void OnConfirmQuit()
+    {
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#else
+        Application.Quit();
+#endif
     }
 
     public void OnMainMenuButton()
